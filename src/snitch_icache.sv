@@ -26,6 +26,8 @@ module snitch_icache #(
   parameter int FILL_AW = -1,
   /// Fill interface data width. Power of two; >= 8.
   parameter int FILL_DW = -1,
+  /// Serialize the L1 lookup (parallel tag/data lookup by default)
+  parameter bit SERIAL_LOOKUP = 0,
   /// This reduces area impact at the cost of
   /// increased hassle of having latches in
   /// the design.
@@ -410,42 +412,82 @@ module snitch_icache #(
     assign flush_ready = flush_ready_lookup;
   end
 
-  snitch_icache_lookup #(
-    .CFG (CFG),
-    .sram_cfg_tag_t (sram_cfg_tag_t),
-    .sram_cfg_data_t (sram_cfg_data_t)
-  ) i_lookup (
-    .clk_i,
-    .rst_ni,
+  if (SERIAL_LOOKUP) begin : gen_serial_lookup
+    snitch_icache_lookup_serial #(
+      .CFG (CFG),
+      .sram_cfg_tag_t (sram_cfg_tag_t),
+      .sram_cfg_data_t (sram_cfg_data_t)
+    ) i_lookup (
+      .clk_i,
+      .rst_ni,
 
-    .flush_valid_i (flush_valid_lookup  ),
-    .flush_ready_o (flush_ready_lookup  ),
+      .flush_valid_i (flush_valid_lookup  ),
+      .flush_ready_o (flush_ready_lookup  ),
 
-    .in_addr_i     ( prefetch_lookup_req.addr  ),
-    .in_id_i       ( prefetch_lookup_req.id    ),
-    .in_valid_i    ( prefetch_lookup_req_valid ),
-    .in_ready_o    ( prefetch_lookup_req_ready ),
+      .in_addr_i     ( prefetch_lookup_req.addr  ),
+      .in_id_i       ( prefetch_lookup_req.id    ),
+      .in_valid_i    ( prefetch_lookup_req_valid ),
+      .in_ready_o    ( prefetch_lookup_req_ready ),
 
-    .out_addr_o    ( lookup_addr        ),
-    .out_id_o      ( lookup_id          ),
-    .out_set_o     ( lookup_set         ),
-    .out_hit_o     ( lookup_hit         ),
-    .out_data_o    ( lookup_data        ),
-    .out_error_o   ( lookup_error       ),
-    .out_valid_o   ( lookup_valid       ),
-    .out_ready_i   ( lookup_ready       ),
+      .out_addr_o    ( lookup_addr        ),
+      .out_id_o      ( lookup_id          ),
+      .out_set_o     ( lookup_set         ),
+      .out_hit_o     ( lookup_hit         ),
+      .out_data_o    ( lookup_data        ),
+      .out_error_o   ( lookup_error       ),
+      .out_valid_o   ( lookup_valid       ),
+      .out_ready_i   ( lookup_ready       ),
 
-    .write_addr_i  ( write_addr         ),
-    .write_set_i   ( write_set          ),
-    .write_data_i  ( write_data         ),
-    .write_tag_i   ( write_tag          ),
-    .write_error_i ( write_error        ),
-    .write_valid_i ( write_valid        ),
-    .write_ready_o ( write_ready        ),
+      .write_addr_i  ( write_addr         ),
+      .write_set_i   ( write_set          ),
+      .write_data_i  ( write_data         ),
+      .write_tag_i   ( write_tag          ),
+      .write_error_i ( write_error        ),
+      .write_valid_i ( write_valid        ),
+      .write_ready_o ( write_ready        ),
 
-    .sram_cfg_tag_i,
-    .sram_cfg_data_i
-  );
+      .sram_cfg_tag_i,
+      .sram_cfg_data_i
+    );
+
+  end else begin : gen_parallel_lookup
+    snitch_icache_lookup_parallel #(
+      .CFG (CFG),
+      .sram_cfg_tag_t (sram_cfg_tag_t),
+      .sram_cfg_data_t (sram_cfg_data_t)
+    ) i_lookup (
+      .clk_i,
+      .rst_ni,
+
+      .flush_valid_i (flush_valid_lookup  ),
+      .flush_ready_o (flush_ready_lookup  ),
+
+      .in_addr_i     ( prefetch_lookup_req.addr  ),
+      .in_id_i       ( prefetch_lookup_req.id    ),
+      .in_valid_i    ( prefetch_lookup_req_valid ),
+      .in_ready_o    ( prefetch_lookup_req_ready ),
+
+      .out_addr_o    ( lookup_addr        ),
+      .out_id_o      ( lookup_id          ),
+      .out_set_o     ( lookup_set         ),
+      .out_hit_o     ( lookup_hit         ),
+      .out_data_o    ( lookup_data        ),
+      .out_error_o   ( lookup_error       ),
+      .out_valid_o   ( lookup_valid       ),
+      .out_ready_i   ( lookup_ready       ),
+
+      .write_addr_i  ( write_addr         ),
+      .write_set_i   ( write_set          ),
+      .write_data_i  ( write_data         ),
+      .write_tag_i   ( write_tag          ),
+      .write_error_i ( write_error        ),
+      .write_valid_i ( write_valid        ),
+      .write_ready_o ( write_ready        ),
+
+      .sram_cfg_tag_i,
+      .sram_cfg_data_i
+    );
+  end
 
   // The miss handler module deals with the result of the lookup. It also
   // keeps track of the pending refills and ensures that no redundant memory

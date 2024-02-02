@@ -25,6 +25,7 @@ module snitch_read_only_cache #(
   parameter int unsigned AxiUserWidth = 0,
   parameter int unsigned MaxTrans     = 0,
   parameter int unsigned NrAddrRules  = 1,
+  parameter bit          SerialLookup = 1,
   parameter type slv_req_t = logic,
   parameter type slv_rsp_t = logic,
   parameter type mst_req_t = logic,
@@ -273,42 +274,81 @@ module snitch_read_only_cache #(
   );
 
   // The lookup module contains the actual cache RAMs and performs lookups.
-  snitch_icache_lookup #(
-    .CFG              ( CFG ),
-    .sram_cfg_tag_t   ( sram_cfg_tag_t  ),
-    .sram_cfg_data_t  ( sram_cfg_data_t )
-  ) i_lookup (
-    .clk_i,
-    .rst_ni,
+  if (SerialLookup) begin : gen_serial_lookup
+    snitch_icache_lookup_serial #(
+      .CFG              ( CFG ),
+      .sram_cfg_tag_t   ( sram_cfg_tag_t  ),
+      .sram_cfg_data_t  ( sram_cfg_data_t )
+    ) i_lookup (
+      .clk_i,
+      .rst_ni,
 
-    .flush_valid_i ( flush_valid_i ),
-    .flush_ready_o ( flush_ready_o ),
+      .flush_valid_i ( flush_valid_i ),
+      .flush_ready_o ( flush_ready_o ),
 
-    .in_addr_i     ( in_addr       ),
-    .in_id_i       ( in_id         ),
-    .in_valid_i    ( in_valid      ),
-    .in_ready_o    ( in_ready      ),
+      .in_addr_i     ( in_addr       ),
+      .in_id_i       ( in_id         ),
+      .in_valid_i    ( in_valid      ),
+      .in_ready_o    ( in_ready      ),
 
-    .out_addr_o    ( lookup_addr   ),
-    .out_id_o      ( lookup_id     ),
-    .out_set_o     ( lookup_set    ),
-    .out_hit_o     ( lookup_hit    ),
-    .out_data_o    ( lookup_data   ),
-    .out_error_o   ( lookup_error  ),
-    .out_valid_o   ( lookup_valid  ),
-    .out_ready_i   ( lookup_ready  ),
+      .out_addr_o    ( lookup_addr   ),
+      .out_id_o      ( lookup_id     ),
+      .out_set_o     ( lookup_set    ),
+      .out_hit_o     ( lookup_hit    ),
+      .out_data_o    ( lookup_data   ),
+      .out_error_o   ( lookup_error  ),
+      .out_valid_o   ( lookup_valid  ),
+      .out_ready_i   ( lookup_ready  ),
 
-    .write_addr_i  ( write_addr    ),
-    .write_set_i   ( write_set     ),
-    .write_data_i  ( write_data    ),
-    .write_tag_i   ( write_tag     ),
-    .write_error_i ( write_error   ),
-    .write_valid_i ( write_valid   ),
-    .write_ready_o ( write_ready   ),
+      .write_addr_i  ( write_addr    ),
+      .write_set_i   ( write_set     ),
+      .write_data_i  ( write_data    ),
+      .write_tag_i   ( write_tag     ),
+      .write_error_i ( write_error   ),
+      .write_valid_i ( write_valid   ),
+      .write_ready_o ( write_ready   ),
 
-    .sram_cfg_tag_i,
-    .sram_cfg_data_i
-  );
+      .sram_cfg_tag_i,
+      .sram_cfg_data_i
+    );
+  end else begin : gen_parallel_lookup
+    snitch_icache_lookup_parallel #(
+      .CFG              ( CFG ),
+      .sram_cfg_tag_t   ( sram_cfg_tag_t  ),
+      .sram_cfg_data_t  ( sram_cfg_data_t )
+    ) i_lookup (
+      .clk_i,
+      .rst_ni,
+
+      .flush_valid_i ( flush_valid_i ),
+      .flush_ready_o ( flush_ready_o ),
+
+      .in_addr_i     ( in_addr       ),
+      .in_id_i       ( in_id         ),
+      .in_valid_i    ( in_valid      ),
+      .in_ready_o    ( in_ready      ),
+
+      .out_addr_o    ( lookup_addr   ),
+      .out_id_o      ( lookup_id     ),
+      .out_set_o     ( lookup_set    ),
+      .out_hit_o     ( lookup_hit    ),
+      .out_data_o    ( lookup_data   ),
+      .out_error_o   ( lookup_error  ),
+      .out_valid_o   ( lookup_valid  ),
+      .out_ready_i   ( lookup_ready  ),
+
+      .write_addr_i  ( write_addr    ),
+      .write_set_i   ( write_set     ),
+      .write_data_i  ( write_data    ),
+      .write_tag_i   ( write_tag     ),
+      .write_error_i ( write_error   ),
+      .write_valid_i ( write_valid   ),
+      .write_ready_o ( write_ready   ),
+
+      .sram_cfg_tag_i,
+      .sram_cfg_data_i
+    );
+  end
 
   // The handler module deals with the result of the lookup. It also
   // keeps track of the pending refills and ensures that no redundant memory
