@@ -399,16 +399,18 @@ module snitch_icache #(
   // We need to propagate the handshake into the other
   // clock domain in case we operate w/ different clocks.
   if (ISO_CROSSING) begin : gen_flush_crossing
-    isochronous_4phase_handshake
+    isochronous_spill_register
     i_isochronous_4phase_handshake (
       .src_clk_i   ( clk_d2_i           ),
       .src_rst_ni  ( rst_ni             ),
       .src_valid_i ( flush_valid        ),
       .src_ready_o ( flush_ready        ),
+      .src_data_i  ( '0                 ),
       .dst_clk_i   ( clk_i              ),
       .dst_rst_ni  ( rst_ni             ),
       .dst_valid_o ( flush_valid_lookup ),
-      .dst_ready_i ( flush_ready_lookup )
+      .dst_ready_i ( flush_ready_lookup ),
+      .dst_data_o  ( /* Unused */       )
     );
   end else begin : gen_no_flush_crossing
     assign flush_valid_lookup = flush_valid;
