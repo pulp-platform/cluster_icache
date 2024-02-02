@@ -200,6 +200,7 @@ module snitch_read_only_cache #(
     FETCH_DW:           AxiDataWidth,
     FILL_AW:            AxiAddrWidth,
     FILL_DW:            AxiDataWidth,
+    L1_TAG_SCM:         0, // Unused here
     EARLY_LATCH:        0, // Unused here
     BUFFER_LOOKUP:      1, // Mandatory here
     GUARANTEE_ORDERING: 1, // Mandatory here
