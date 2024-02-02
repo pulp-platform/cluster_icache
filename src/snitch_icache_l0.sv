@@ -10,32 +10,32 @@
 
 /// A simple single-line cache private to each port.
 module snitch_icache_l0 import snitch_icache_pkg::*; #(
-    parameter config_t CFG = '0,
-    parameter int unsigned L0_ID = 0
+  parameter config_t CFG = '0,
+  parameter int unsigned L0_ID = 0
 ) (
-    input  logic clk_i,
-    input  logic rst_ni,
-    input  logic flush_valid_i,
+  input  logic clk_i,
+  input  logic rst_ni,
+  input  logic flush_valid_i,
 
-    input  logic                      enable_prefetching_i,
-    output icache_events_t            icache_events_o,
+  input  logic                      enable_prefetching_i,
+  output icache_events_t            icache_events_o,
 
-    input  logic [CFG.FETCH_AW-1:0]   in_addr_i,
-    input  logic                      in_valid_i,
-    output logic [CFG.FETCH_DW-1:0]   in_data_o,
-    output logic                      in_ready_o,
-    output logic                      in_error_o,
+  input  logic [CFG.FETCH_AW-1:0]   in_addr_i,
+  input  logic                      in_valid_i,
+  output logic [CFG.FETCH_DW-1:0]   in_data_o,
+  output logic                      in_ready_o,
+  output logic                      in_error_o,
 
-    output logic [CFG.FETCH_AW-1:0]      out_req_addr_o,
-    output logic [CFG.ID_WIDTH_REQ-1:0]  out_req_id_o,
-    output logic                         out_req_valid_o,
-    input  logic                         out_req_ready_i,
+  output logic [CFG.FETCH_AW-1:0]      out_req_addr_o,
+  output logic [CFG.ID_WIDTH_REQ-1:0]  out_req_id_o,
+  output logic                         out_req_valid_o,
+  input  logic                         out_req_ready_i,
 
-    input  logic [CFG.LINE_WIDTH-1:0]    out_rsp_data_i,
-    input  logic                         out_rsp_error_i,
-    input  logic [CFG.ID_WIDTH_RESP-1:0] out_rsp_id_i,
-    input  logic                         out_rsp_valid_i,
-    output logic                         out_rsp_ready_o
+  input  logic [CFG.LINE_WIDTH-1:0]    out_rsp_data_i,
+  input  logic                         out_rsp_error_i,
+  input  logic [CFG.ID_WIDTH_RESP-1:0] out_rsp_id_i,
+  input  logic                         out_rsp_valid_i,
+  output logic                         out_rsp_ready_o
 );
 
   typedef logic [CFG.FETCH_AW-1:0] addr_t;
@@ -359,15 +359,15 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   assign latch_prefetch = prefetcher_out.vld & ~prefetch_req_vld_q;
 
   always_comb begin
-      prefetch_req_vld_d = prefetch_req_vld_q;
-      prefetch_req_addr_d = prefetch_req_addr_q;
+    prefetch_req_vld_d = prefetch_req_vld_q;
+    prefetch_req_addr_d = prefetch_req_addr_q;
 
-      if (prefetch_ready) prefetch_req_vld_d = 1'b0;
+    if (prefetch_ready) prefetch_req_vld_d = 1'b0;
 
-      if (latch_prefetch) begin
-          prefetch_req_vld_d = 1'b1;
-          prefetch_req_addr_d = prefetcher_out.addr;
-      end
+    if (latch_prefetch) begin
+      prefetch_req_vld_d = 1'b1;
+      prefetch_req_addr_d = prefetcher_out.addr;
+    end
   end
 
   assign prefetch.is_prefetch = 1'b1;
