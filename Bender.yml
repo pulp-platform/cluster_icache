@@ -36,6 +36,9 @@ sources:
   # Level 3
   - src/snitch_icache.sv
   - src/snitch_read_only_cache.sv
+  - target: pulp
+    files:
+      - src/pulp_icache_wrap.sv
   - target: test
     files:
       - test/snitch_icache_l0_tb.sv
