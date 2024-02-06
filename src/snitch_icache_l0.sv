@@ -303,18 +303,18 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
       is_jal[i] = 1'b0;
       unique casez (ins_data[i*32+:32])
         // static prediction
-        riscv_instr::BEQ,
-        riscv_instr::BNE,
-        riscv_instr::BLT,
-        riscv_instr::BGE,
-        riscv_instr::BLTU,
-        riscv_instr::BGEU: begin
+        riscv_instr_branch::BEQ,
+        riscv_instr_branch::BNE,
+        riscv_instr_branch::BLT,
+        riscv_instr_branch::BGE,
+        riscv_instr_branch::BLTU,
+        riscv_instr_branch::BGEU: begin
           // look at the sign bit of the immediate field
           // backward branches (immediate negative) taken
           // forward branches not taken
           is_branch_taken[i] = ins_data[i*32+31];
         end
-        riscv_instr::JAL: begin
+        riscv_instr_branch::JAL: begin
           is_jal[i] = 1'b1;
         end
         // we can't do anything about the JALR case as we don't
