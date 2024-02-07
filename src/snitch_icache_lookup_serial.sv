@@ -138,7 +138,7 @@ module snitch_icache_lookup_serial #(
   // Instantiate the tag sets.
   if (CFG.L1_TAG_SCM) begin : gen_scm
     for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : g_sets
-      latch_scm #(
+      register_file_1r_1w #(
         .ADDR_WIDTH ($clog2(CFG.LINE_COUNT)),
         .DATA_WIDTH (CFG.TAG_WIDTH+2       )
       ) i_tag (
