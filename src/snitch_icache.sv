@@ -45,8 +45,8 @@ module snitch_icache #(
   /// Operate L0 cache in slower clock-domain
   parameter bit ISO_CROSSING      = 1,
   /// Configuration input types for memory cuts used in implementation.
-    parameter type sram_cfg_data_t  = logic,
-    parameter type sram_cfg_tag_t   = logic,
+  parameter type sram_cfg_data_t  = logic,
+  parameter type sram_cfg_tag_t   = logic,
 
   parameter type axi_req_t = logic,
   parameter type axi_rsp_t = logic

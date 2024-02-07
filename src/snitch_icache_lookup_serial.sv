@@ -235,13 +235,13 @@ module snitch_icache_lookup_serial #(
   typedef logic [CFG.LINE_WIDTH-1:0] data_rsp_t;
 
   logic [DataAddrWidth-1:0] data_addr;
-  logic                       data_enable;
-  data_rsp_t                  data_wdata, data_rdata;
-  logic                       data_write;
+  logic                     data_enable;
+  data_rsp_t                data_wdata, data_rdata;
+  logic                     data_write;
 
-  data_req_t                  data_req_d, data_req_q;
-  data_rsp_t                  data_rsp_q;
-  logic                       data_valid, data_ready;
+  data_req_t                data_req_d, data_req_q;
+  data_rsp_t                data_rsp_q;
+  logic                     data_valid, data_ready;
 
   // Connect tag stage response to data stage request
   assign data_req_d.addr  = tag_req_q.addr;
