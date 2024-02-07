@@ -156,7 +156,7 @@ module snitch_icache_handler #(
     .empty_o (                 )
   );
 
-  // Gurarntee ordering
+  // Guarantee ordering
   // Check if there is a miss in flight from this ID. In that case, stall all
   // further requests to guarantee correct ordering of requests.
   logic [CFG.ID_WIDTH_RESP-1:0] miss_in_flight_d, miss_in_flight_q;
