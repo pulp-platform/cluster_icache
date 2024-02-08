@@ -30,6 +30,8 @@ module snitch_icache import snitch_icache_pkg::*; #(
   parameter bit FETCH_PRIORITY = 1'b0,
   /// Merge L0-L1 fetches if requesting the same address
   parameter bit MERGE_FETCHES = 1'b0,
+  /// Extra parity bits to add to a line for L1 reliability.
+  parameter int unsigned L1_DATA_PARITY_BITS = 0,
   /// Serialize the L1 lookup (parallel tag/data lookup by default)
   parameter bit SERIAL_LOOKUP = 0,
   /// Replace the L1 tag banks with latch-based SCM.
@@ -95,6 +97,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
     FETCH_DW:           FETCH_DW,
     FILL_AW:            FILL_AW,
     FILL_DW:            FILL_DW,
+    L1_DATA_PARITY_BITS: L1_DATA_PARITY_BITS,
     L1_TAG_SCM:         L1_TAG_SCM,
     EARLY_LATCH:        EARLY_LATCH,
     BUFFER_LOOKUP:      0,
