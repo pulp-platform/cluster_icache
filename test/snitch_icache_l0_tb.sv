@@ -87,6 +87,7 @@ module snitch_icache_l0_tb #(
       FETCH_DW:           FETCH_DW,
       FILL_AW:            FILL_AW,
       FILL_DW:            FILL_DW,
+      L1_DATA_PARITY_BITS: 0,
       L1_TAG_SCM:         1'b0,
       EARLY_LATCH:        EARLY_LATCH,
       BUFFER_LOOKUP:      BUFFER_LOOKUP,
