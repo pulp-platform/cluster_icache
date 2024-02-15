@@ -100,7 +100,7 @@ module snitch_icache #(
     LINE_ALIGN:  $clog2(LINE_WIDTH/8),
     COUNT_ALIGN: $clog2(LINE_COUNT),
     SET_ALIGN:   $clog2(SET_COUNT),
-    TAG_WIDTH:   FETCH_AW - $clog2(LINE_WIDTH/8) - $clog2(LINE_COUNT) + 1,
+    TAG_WIDTH:   FETCH_AW - $clog2(LINE_WIDTH/8) - $clog2(LINE_COUNT),
     L0_TAG_WIDTH: FETCH_AW - $clog2(LINE_WIDTH/8),
     L0_EARLY_TAG_WIDTH:
       (L0_EARLY_TAG_WIDTH == -1) ? FETCH_AW - $clog2(LINE_WIDTH/8) : L0_EARLY_TAG_WIDTH,
@@ -633,7 +633,8 @@ module l0_to_bypass #(
   // Mask address so that it is aligned to the cache-line width.
   logic [CFG.NR_FETCH_PORTS-1:0][CFG.FETCH_AW-1:0] in_addr_masked;
   for (genvar i = 0; i < CFG.NR_FETCH_PORTS; i++) begin : gen_masked_addr
-    assign in_addr_masked[i] = in_addr_i[i] >> CFG.LINE_ALIGN << CFG.LINE_ALIGN;
+    assign in_addr_masked[i] = {in_addr_i[i][CFG.FETCH_AW-1:CFG.LINE_ALIGN],
+                                {CFG.LINE_ALIGN{1'b0}}};
   end
   stream_arbiter #(
     .DATA_T ( logic [CFG.FETCH_AW-1:0] ),

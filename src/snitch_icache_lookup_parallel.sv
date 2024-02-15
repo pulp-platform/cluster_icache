@@ -72,7 +72,7 @@ module snitch_icache_lookup_parallel #(
     write_ready_o = 0;
     in_ready_o = 0;
 
-    ram_addr   = in_addr_i >> CFG.LINE_ALIGN;
+    ram_addr   = in_addr_i[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
     ram_wdata  = write_data_i;
     ram_wtag   = {1'b1, write_error_i, write_tag_i};
     ram_enable = '0;
@@ -192,7 +192,7 @@ module snitch_icache_lookup_parallel #(
 
   always_comb begin
     automatic logic [CFG.SET_COUNT-1:0] errors;
-    required_tag = addr_q >> (CFG.LINE_ALIGN + CFG.COUNT_ALIGN);
+    required_tag = addr_q[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
     for (int i = 0; i < CFG.SET_COUNT; i++) begin
       line_hit[i] = ram_rtag[i][CFG.TAG_WIDTH+1] &&
         ram_rtag[i][CFG.TAG_WIDTH-1:0] == required_tag;

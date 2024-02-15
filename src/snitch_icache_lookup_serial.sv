@@ -106,7 +106,7 @@ module snitch_icache_lookup_serial #(
 
   // Multiplex read and write access to the tag banks onto one port, prioritizing write accesses
   always_comb begin
-    tag_addr   = in_addr_i >> CFG.LINE_ALIGN;
+    tag_addr   = in_addr_i[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
     tag_enable = '0;
     tag_wdata  = {1'b1, write_error_i, write_tag_i};
     tag_write  = 1'b0;
@@ -178,7 +178,7 @@ module snitch_icache_lookup_serial #(
 
   // Determine which set hit
   logic [CFG.SET_COUNT-1:0] errors;
-  assign required_tag = tag_req_q.addr >> (CFG.LINE_ALIGN + CFG.COUNT_ALIGN);
+  assign required_tag = tag_req_q.addr[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
   for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : gen_line_hit
     assign line_hit[i] = tag_rdata[i][CFG.TAG_WIDTH+1] &&
                          tag_rdata[i][CFG.TAG_WIDTH-1:0] == required_tag; // check valid bit and tag
