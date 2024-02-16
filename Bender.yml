@@ -2,9 +2,13 @@
 # https://github.com/pulp-platform/bender#manifest-format-benderyml
 
 package:
-  name: snitch_icache
+  name: cluster_icache
   authors:
-    - "Michael Rogenmoser <michael@rogenmoser.us>"
+    - "Fabian Schuiki <fschuiki@iis.ee.ethz.ch>"
+    - "Florian Zaruba <zarubaf@iis.ee.ethz.ch>"
+    - "Paul Scheffler <paulsc@iis.ee.ethz.ch>"
+    - "Samuel Riedel <sreidel@iis.ee.ethz.ch>"
+    - "Michael Rogenmoser <michaero@iis.ee.ethz.ch>"
 
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.28.0 }
