@@ -1,5 +1,6 @@
-# A more detailed description of the manifest format `Bender.yml` can be found here:
-# https://github.com/pulp-platform/bender#manifest-format-benderyml
+# Copyright 2024 ETH Zurich and University of Bologna.
+# Solderpad Hardware License, Version 0.51, see LICENSE for details.
+# SPDX-License-Identifier: SHL-0.51
 
 package:
   name: cluster_icache
