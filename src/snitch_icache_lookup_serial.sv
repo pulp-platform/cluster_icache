@@ -177,17 +177,15 @@ module snitch_icache_lookup_serial #(
   end
 
   // Determine which set hit
-  always_comb begin
-    automatic logic [CFG.SET_COUNT-1:0] errors;
-    required_tag = tag_req_q.addr >> (CFG.LINE_ALIGN + CFG.COUNT_ALIGN);
-    for (int i = 0; i < CFG.SET_COUNT; i++) begin
-      line_hit[i] = tag_rdata[i][CFG.TAG_WIDTH+1] &&
-                    tag_rdata[i][CFG.TAG_WIDTH-1:0] == required_tag;
-      errors[i] = tag_rdata[i][CFG.TAG_WIDTH] && line_hit[i];
-    end
-    tag_rsp_s.hit = |line_hit;
-    tag_rsp_s.error = |errors;
+  logic [CFG.SET_COUNT-1:0] errors;
+  assign required_tag = tag_req_q.addr >> (CFG.LINE_ALIGN + CFG.COUNT_ALIGN);
+  for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : gen_line_hit
+    assign line_hit[i] = tag_rdata[i][CFG.TAG_WIDTH+1] &&
+                         tag_rdata[i][CFG.TAG_WIDTH-1:0] == required_tag; // check valid bit and tag
+    assign errors[i] = tag_rdata[i][CFG.TAG_WIDTH] && line_hit[i]; // check error bit
   end
+  assign tag_rsp_s.hit = |line_hit;
+  assign tag_rsp_s.error = |errors;
 
   lzc #(.WIDTH(CFG.SET_COUNT)) i_lzc (
     .in_i     ( line_hit       ),
