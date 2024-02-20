@@ -28,6 +28,8 @@ module snitch_icache #(
   parameter int unsigned FILL_DW = -1,
   /// Allow fetches to have priority over prefetches for L0 to L1
   parameter bit FETCH_PRIORITY = 1'b0,
+  /// Merge L0-L1 fetches if requesting the same address
+  parameter bit MERGE_FETCHES = 1'b0,
   /// Serialize the L1 lookup (parallel tag/data lookup by default)
   parameter bit SERIAL_LOOKUP = 0,
   /// Replace the L1 tag banks with latch-based SCM.
@@ -446,18 +448,23 @@ module snitch_icache #(
 
   end
 
-  for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prefetch_req_ready
-    assign prefetch_req_ready[i] = prefetch_req_ready_tmp[i] |
-                                   (prefetch_lookup_req_ready &
-                                    prefetch_req[i].addr == prefetch_lookup_req.addr);
-  end
-
-  always_comb begin
-    prefetch_lookup_req = prefetch_lookup_req_tmp;
-    for (int i = 0; i < NR_FETCH_PORTS; i++) begin
-      prefetch_lookup_req.id |= prefetch_req_ready[i] && prefetch_req_valid[i] ?
-                                prefetch_req[i].id : '0;
+  if (MERGE_FETCHES) begin : gen_merge_fetches
+    for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prefetch_req_ready
+      assign prefetch_req_ready[i] = prefetch_req_ready_tmp[i] |
+                                     (prefetch_lookup_req_ready &
+                                      prefetch_req[i].addr == prefetch_lookup_req.addr);
     end
+
+    always_comb begin
+      prefetch_lookup_req = prefetch_lookup_req_tmp;
+      for (int i = 0; i < NR_FETCH_PORTS; i++) begin
+        prefetch_lookup_req.id |= prefetch_req_ready[i] && prefetch_req_valid[i] ?
+                                  prefetch_req[i].id : '0;
+      end
+    end
+  end else begin : gen_no_merge_fetches
+    assign prefetch_req_ready = prefetch_req_ready_tmp;
+    assign prefetch_lookup_req = prefetch_lookup_req_tmp;
   end
 
   // 2. Response Side
