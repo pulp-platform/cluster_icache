@@ -1,0 +1,17 @@
+# Copyright 2024 ETH Zurich and University of Bologna.
+# Solderpad Hardware License, Version 0.51, see LICENSE for details.
+# SPDX-License-Identifier: SHL-0.51
+
+variables:
+  GIT_STRATEGY: clone
+  VSIM: questa-2023.4 vsim
+
+test_l0:
+  script:
+    - make clean build
+    - make test_l0_nogui
+
+test_ro:
+  script:
+    - make clean build
+    - make test_ro_nogui

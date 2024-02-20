@@ -1,0 +1,8 @@
+.bender
+Bender.lock
+compile.tcl
+
+modelsim.ini
+work/
+transcript
+vsim.wlf

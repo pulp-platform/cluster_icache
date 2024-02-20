@@ -5,7 +5,7 @@
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
 /// An actual cache lookup.
-module snitch_icache_lookup #(
+module snitch_icache_lookup_parallel #(
   parameter snitch_icache_pkg::config_t CFG = '0,
   /// Configuration input types for SRAMs used in implementation.
   parameter type sram_cfg_data_t  = logic,

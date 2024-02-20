@@ -14,7 +14,7 @@ package:
 dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.28.0 }
   tech_cells_generic: { git: "https://github.com/pulp-platform/tech_cells_generic.git", version:  0.2.11  }
-  axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.38.0 }
+  axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.39.1 }
 
 sources:
   # Source files grouped in levels. Files in level 0 have no dependencies on files in this
@@ -22,6 +22,7 @@ sources:
   # levels 1 and 0, etc. Files within a level are ordered alphabetically.
   # Level 0
   - src/snitch_icache_pkg.sv
+  - src/riscv_instr_branch.sv
   # Level 1
   - src/snitch_axi_to_cache.sv
   - src/snitch_icache_l0.sv

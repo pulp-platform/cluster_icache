@@ -123,6 +123,12 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   assign hit_prefetch_any = |hit_prefetch;
   assign miss = ~hit_any & in_valid_i & ~pending_refill_q;
 
+  logic clk_inv;
+  tc_clk_inverter i_clk_inv (
+    .clk_i (clk_i),
+    .clk_o (clk_inv)
+  );
+
   for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_array
     // Tag Array
     always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -142,9 +148,16 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
       end
     end
     if (CFG.EARLY_LATCH) begin : gen_latch
+      logic clk_vld;
+      tc_clk_gating i_clk_gate (
+        .clk_i     (clk_inv         ),
+        .en_i      (validate_strb[i]),
+        .test_en_i (1'b0            ),
+        .clk_o     (clk_vld         )
+      );
       // Data Array
       always_latch begin
-        if (clk_i && validate_strb[i]) begin
+        if (clk_vld) begin
           data[i] <= out_rsp_data_i;
         end
       end
@@ -290,18 +303,18 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
       is_jal[i] = 1'b0;
       unique casez (ins_data[i*32+:32])
         // static prediction
-        riscv_instr::BEQ,
-        riscv_instr::BNE,
-        riscv_instr::BLT,
-        riscv_instr::BGE,
-        riscv_instr::BLTU,
-        riscv_instr::BGEU: begin
+        riscv_instr_branch::BEQ,
+        riscv_instr_branch::BNE,
+        riscv_instr_branch::BLT,
+        riscv_instr_branch::BGE,
+        riscv_instr_branch::BLTU,
+        riscv_instr_branch::BGEU: begin
           // look at the sign bit of the immediate field
           // backward branches (immediate negative) taken
           // forward branches not taken
           is_branch_taken[i] = ins_data[i*32+31];
         end
-        riscv_instr::JAL: begin
+        riscv_instr_branch::JAL: begin
           is_jal[i] = 1'b1;
         end
         // we can't do anything about the JALR case as we don't
@@ -375,7 +388,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   assign prefetch_valid = prefetch_req_vld_q;
 
   `FF(prefetch_req_vld_q, prefetch_req_vld_d, '0)
-  `FFNR(prefetch_req_addr_q, prefetch_req_addr_d, clk_i)
+  `FF(prefetch_req_addr_q, prefetch_req_addr_d, '0)
 
   // ------------------
   // Performance Events
