@@ -12,39 +12,39 @@ module snitch_icache_handler #(
   input  logic clk_i,
   input  logic rst_ni,
 
-  input  logic [CFG.FETCH_AW-1:0]      in_req_addr_i,
-  input  logic [CFG.ID_WIDTH_REQ-1:0]  in_req_id_i,
-  input  logic [CFG.SET_ALIGN-1:0]     in_req_set_i,
-  input  logic                         in_req_hit_i,
-  input  logic [CFG.LINE_WIDTH-1:0]    in_req_data_i,
-  input  logic                         in_req_error_i,
-  input  logic                         in_req_valid_i,
-  output logic                         in_req_ready_o,
+  input  logic [CFG.FETCH_AW-1:0]    in_req_addr_i,
+  input  logic [CFG.ID_WIDTH-1:0]    in_req_id_i,
+  input  logic [CFG.SET_ALIGN-1:0]   in_req_set_i,
+  input  logic                       in_req_hit_i,
+  input  logic [CFG.LINE_WIDTH-1:0]  in_req_data_i,
+  input  logic                       in_req_error_i,
+  input  logic                       in_req_valid_i,
+  output logic                       in_req_ready_o,
 
-  output logic [CFG.LINE_WIDTH-1:0]    in_rsp_data_o,
-  output logic                         in_rsp_error_o,
-  output logic [CFG.ID_WIDTH_RESP-1:0] in_rsp_id_o,
-  output logic                         in_rsp_valid_o,
-  input  logic                         in_rsp_ready_i,
+  output logic [CFG.LINE_WIDTH-1:0]  in_rsp_data_o,
+  output logic                       in_rsp_error_o,
+  output logic [CFG.ID_WIDTH-1:0]    in_rsp_id_o,
+  output logic                       in_rsp_valid_o,
+  input  logic                       in_rsp_ready_i,
 
-  output logic [CFG.COUNT_ALIGN-1:0]   write_addr_o,
-  output logic [CFG.SET_ALIGN-1:0]     write_set_o,
-  output logic [CFG.LINE_WIDTH-1:0]    write_data_o,
-  output logic [CFG.TAG_WIDTH-1:0]     write_tag_o,
-  output logic                         write_error_o,
-  output logic                         write_valid_o,
-  input  logic                         write_ready_i,
+  output logic [CFG.COUNT_ALIGN-1:0] write_addr_o,
+  output logic [CFG.SET_ALIGN-1:0]   write_set_o,
+  output logic [CFG.LINE_WIDTH-1:0]  write_data_o,
+  output logic [CFG.TAG_WIDTH-1:0]   write_tag_o,
+  output logic                       write_error_o,
+  output logic                       write_valid_o,
+  input  logic                       write_ready_i,
 
-  output logic [CFG.FETCH_AW-1:0]      out_req_addr_o,
-  output logic [CFG.PENDING_IW-1:0]    out_req_id_o,
-  output logic                         out_req_valid_o,
-  input  logic                         out_req_ready_i,
+  output logic [CFG.FETCH_AW-1:0]    out_req_addr_o,
+  output logic [CFG.PENDING_IW-1:0]  out_req_id_o,
+  output logic                       out_req_valid_o,
+  input  logic                       out_req_ready_i,
 
-  input  logic [CFG.LINE_WIDTH-1:0]    out_rsp_data_i,
-  input  logic                         out_rsp_error_i,
-  input  logic [CFG.PENDING_IW-1:0]    out_rsp_id_i,
-  input  logic                         out_rsp_valid_i,
-  output logic                         out_rsp_ready_o
+  input  logic [CFG.LINE_WIDTH-1:0]  out_rsp_data_i,
+  input  logic                       out_rsp_error_i,
+  input  logic [CFG.PENDING_IW-1:0]  out_rsp_id_i,
+  input  logic                       out_rsp_valid_i,
+  output logic                       out_rsp_ready_o
 );
 
 `ifndef SYNTHESIS
@@ -59,22 +59,22 @@ module snitch_icache_handler #(
   typedef struct packed {
     logic valid;
     logic [CFG.FETCH_AW-1:0] addr;
-    logic [CFG.ID_WIDTH_RESP-1:0] idmask; // mask of incoming ids
+    logic [CFG.ID_WIDTH-1:0] idmask; // mask of incoming ids
   } pending_t;
   pending_t pending_q [CFG.PENDING_COUNT];
   logic [CFG.PENDING_COUNT-1:0] pending_clr;
   logic [CFG.PENDING_COUNT-1:0] pending_set;
 
-  logic [CFG.PENDING_IW-1:0]    push_index;
-  logic                         push_init;   // reset the idmask instead of or'ing
-  logic [CFG.FETCH_AW-1:0]      push_addr;
-  logic [CFG.ID_WIDTH_RESP-1:0] push_idmask;
-  logic                         push_enable;
+  logic [CFG.PENDING_IW-1:0] push_index;
+  logic                      push_init;   // reset the idmask instead of or'ing
+  logic [CFG.FETCH_AW-1:0]   push_addr;
+  logic [CFG.ID_WIDTH-1:0]   push_idmask;
+  logic                      push_enable;
 
-  logic [CFG.PENDING_IW-1:0]    pop_index;
-  logic [CFG.FETCH_AW-1:0]      pop_addr;
-  logic [CFG.ID_WIDTH_RESP-1:0] pop_idmask;
-  logic                         pop_enable;
+  logic [CFG.PENDING_IW-1:0] pop_index;
+  logic [CFG.FETCH_AW-1:0]   pop_addr;
+  logic [CFG.ID_WIDTH-1:0]   pop_idmask;
+  logic                      pop_enable;
 
   typedef struct packed {
     logic sel;
@@ -159,7 +159,7 @@ module snitch_icache_handler #(
   // Guarantee ordering
   // Check if there is a miss in flight from this ID. In that case, stall all
   // further requests to guarantee correct ordering of requests.
-  logic [CFG.ID_WIDTH_RESP-1:0] miss_in_flight_d, miss_in_flight_q;
+  logic [CFG.ID_WIDTH-1:0] miss_in_flight_d, miss_in_flight_q;
 
   if (CFG.GUARANTEE_ORDERING) begin : g_miss_in_flight_table
     always_comb begin : p_miss_in_flight
@@ -184,22 +184,22 @@ module snitch_icache_handler #(
   // progress which cover the request. If not, a new refill request is issued
   // and the next free entry in the table allocated. Otherwise the existing
   // table entry is updated.
-  logic [CFG.ID_WIDTH_RESP-1:0] hit_id;
-  logic [CFG.LINE_WIDTH-1:0]    hit_data;
-  logic                         hit_error;
-  logic                         hit_valid;
-  logic                         hit_ready;
+  logic [CFG.ID_WIDTH-1:0]   hit_id;
+  logic [CFG.LINE_WIDTH-1:0] hit_data;
+  logic                      hit_error;
+  logic                      hit_valid;
+  logic                      hit_ready;
 
   always_comb begin : p_miss_handler
     hit_valid = 0;
-    hit_id    = 'b1 << in_req_id_i;
+    hit_id    = in_req_id_i;
     hit_data  = in_req_data_i;
     hit_error = in_req_error_i;
 
     push_index  = free_id;
     push_init   = 0;
     push_addr   = in_req_addr_i;
-    push_idmask = 'b1 << in_req_id_i;
+    push_idmask = in_req_id_i;
     push_enable = 0;
 
     in_req_ready_o  = 1;
@@ -210,7 +210,7 @@ module snitch_icache_handler #(
 
     if (in_req_valid_i) begin
       // Miss already in flight. Stall to preserve ordering
-      if (miss_in_flight_q[in_req_id_i]) begin
+      if (|(miss_in_flight_q & in_req_id_i)) begin
         in_req_ready_o = 0;
       // The cache lookup was a hit.
       end else if (in_req_hit_i) begin

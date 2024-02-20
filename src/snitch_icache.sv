@@ -106,8 +106,7 @@ module snitch_icache #(
     L0_TAG_WIDTH: FETCH_AW - $clog2(LINE_WIDTH/8),
     L0_EARLY_TAG_WIDTH:
       (L0_EARLY_TAG_WIDTH == -1) ? FETCH_AW - $clog2(LINE_WIDTH/8) : L0_EARLY_TAG_WIDTH,
-    ID_WIDTH_REQ: $clog2(NR_FETCH_PORTS) + 1,
-    ID_WIDTH_RESP: 2*NR_FETCH_PORTS,
+    ID_WIDTH:    2*NR_FETCH_PORTS,
     PENDING_IW:  $clog2(NUM_AXI_OUTSTANDING)
   };
 
@@ -152,14 +151,14 @@ module snitch_icache #(
   // `req` channel, the prefetcher issues another low-priority request for the
   // next cache line.
   typedef struct packed {
-    logic [CFG.FETCH_AW-1:0]     addr;
-    logic [CFG.ID_WIDTH_REQ-1:0] id;
+    logic [CFG.FETCH_AW-1:0] addr;
+    logic [CFG.ID_WIDTH-1:0] id;
   } prefetch_req_t;
 
   typedef struct packed {
-    logic [CFG.LINE_WIDTH-1:0]    data;
-    logic                         error;
-    logic [CFG.ID_WIDTH_RESP-1:0] id;
+    logic [CFG.LINE_WIDTH-1:0] data;
+    logic                      error;
+    logic [CFG.ID_WIDTH-1:0]   id;
   } prefetch_resp_t;
 
   prefetch_req_t [NR_FETCH_PORTS-1:0] prefetch_req       ;
@@ -360,7 +359,7 @@ module snitch_icache #(
 
     for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prio
       // prioritize fetches over prefetches
-      assign prefetch_req_priority[i] = ~prefetch_req[i].id[0];
+      assign prefetch_req_priority[i] = prefetch_req[i].id[2*i];
 
       assign prefetch_req_ready[i] = prefetch_req_priority[i] ? prefetch_req_ready_fetch[i] :
                                                                 prefetch_req_ready_pre[i];
@@ -442,22 +441,22 @@ module snitch_icache #(
   /// Tag lookup
 
   // The lookup module contains the actual cache RAMs and performs lookups.
-  logic [CFG.FETCH_AW-1:0]     lookup_addr  ;
-  logic [CFG.ID_WIDTH_REQ-1:0] lookup_id    ;
-  logic [CFG.SET_ALIGN-1:0]    lookup_set   ;
-  logic                        lookup_hit   ;
-  logic [CFG.LINE_WIDTH-1:0]   lookup_data  ;
-  logic                        lookup_error ;
-  logic                        lookup_valid ;
-  logic                        lookup_ready ;
+  logic [CFG.FETCH_AW-1:0]    lookup_addr  ;
+  logic [CFG.ID_WIDTH-1:0]    lookup_id    ;
+  logic [CFG.SET_ALIGN-1:0]   lookup_set   ;
+  logic                       lookup_hit   ;
+  logic [CFG.LINE_WIDTH-1:0]  lookup_data  ;
+  logic                       lookup_error ;
+  logic                       lookup_valid ;
+  logic                       lookup_ready ;
 
-  logic [CFG.COUNT_ALIGN-1:0]  write_addr  ;
-  logic [CFG.SET_ALIGN-1:0]    write_set   ;
-  logic [CFG.LINE_WIDTH-1:0]   write_data  ;
-  logic [CFG.TAG_WIDTH-1:0]    write_tag   ;
-  logic                        write_error ;
-  logic                        write_valid ;
-  logic                        write_ready ;
+  logic [CFG.COUNT_ALIGN-1:0] write_addr  ;
+  logic [CFG.SET_ALIGN-1:0]   write_set   ;
+  logic [CFG.LINE_WIDTH-1:0]  write_data  ;
+  logic [CFG.TAG_WIDTH-1:0]   write_tag   ;
+  logic                       write_error ;
+  logic                       write_valid ;
+  logic                       write_ready ;
 
   logic flush_valid, flush_ready;
   logic flush_valid_lookup, flush_ready_lookup;

@@ -26,16 +26,16 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   output logic                      in_ready_o,
   output logic                      in_error_o,
 
-  output logic [CFG.FETCH_AW-1:0]      out_req_addr_o,
-  output logic [CFG.ID_WIDTH_REQ-1:0]  out_req_id_o,
-  output logic                         out_req_valid_o,
-  input  logic                         out_req_ready_i,
+  output logic [CFG.FETCH_AW-1:0]   out_req_addr_o,
+  output logic [CFG.ID_WIDTH-1:0]   out_req_id_o,
+  output logic                      out_req_valid_o,
+  input  logic                      out_req_ready_i,
 
-  input  logic [CFG.LINE_WIDTH-1:0]    out_rsp_data_i,
-  input  logic                         out_rsp_error_i,
-  input  logic [CFG.ID_WIDTH_RESP-1:0] out_rsp_id_i,
-  input  logic                         out_rsp_valid_i,
-  output logic                         out_rsp_ready_o
+  input  logic [CFG.LINE_WIDTH-1:0] out_rsp_data_i,
+  input  logic                      out_rsp_error_i,
+  input  logic [CFG.ID_WIDTH-1:0]   out_rsp_id_i,
+  input  logic                      out_rsp_valid_i,
+  output logic                      out_rsp_ready_o
 );
 
   typedef logic [CFG.FETCH_AW-1:0] addr_t;
@@ -262,7 +262,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   assign in_error_o = '0;
 
   assign out_req_addr_o = out_req.addr;
-  assign out_req_id_o = {L0_ID, out_req.is_prefetch};
+  assign out_req_id_o = 'b1 << {L0_ID, out_req.is_prefetch};
 
   // Priority arbitrate requests.
   always_comb begin
