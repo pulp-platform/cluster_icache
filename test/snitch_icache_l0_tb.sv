@@ -101,8 +101,7 @@ module snitch_icache_l0_tb #(
       L0_TAG_WIDTH: FETCH_AW - $clog2(LINE_WIDTH/8),
       L0_EARLY_TAG_WIDTH:
         (L0_EARLY_TAG_WIDTH == -1) ? FETCH_AW - $clog2(LINE_WIDTH/8) : L0_EARLY_TAG_WIDTH,
-      ID_WIDTH_REQ: $clog2(NR_FETCH_PORTS) + 1,
-      ID_WIDTH_RESP: 2*NR_FETCH_PORTS,
+      ID_WIDTH:    2*NR_FETCH_PORTS,
       PENDING_IW:  $clog2(2)
   };
 
