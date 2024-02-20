@@ -30,6 +30,8 @@ module snitch_icache #(
   parameter bit SERIAL_LOOKUP = 0,
   /// Replace the L1 tag banks with latch-based SCM.
   parameter bit L1_TAG_SCM = 0,
+  /// Number of pending response beats for the L1 cache.
+  parameter int unsigned NUM_AXI_OUTSTANDING = 2,
   /// This reduces area impact at the cost of
   /// increased hassle of having latches in
   /// the design.
@@ -77,14 +79,13 @@ module snitch_icache #(
 
   // Bundle the parameters up into a proper configuration struct that we can
   // pass to submodules.
-  localparam int PendingCount = 2;
   localparam snitch_icache_pkg::config_t CFG = '{
     NR_FETCH_PORTS:     NR_FETCH_PORTS,
     LINE_WIDTH:         LINE_WIDTH,
     LINE_COUNT:         LINE_COUNT,
     L0_LINE_COUNT:      L0_LINE_COUNT,
     SET_COUNT:          SET_COUNT,
-    PENDING_COUNT:      PendingCount,
+    PENDING_COUNT:      NUM_AXI_OUTSTANDING,
     FETCH_AW:           FETCH_AW,
     FETCH_DW:           FETCH_DW,
     FILL_AW:            FILL_AW,
@@ -105,7 +106,7 @@ module snitch_icache #(
       (L0_EARLY_TAG_WIDTH == -1) ? FETCH_AW - $clog2(LINE_WIDTH/8) : L0_EARLY_TAG_WIDTH,
     ID_WIDTH_REQ: $clog2(NR_FETCH_PORTS) + 1,
     ID_WIDTH_RESP: 2*NR_FETCH_PORTS,
-    PENDING_IW:  $clog2(PendingCount)
+    PENDING_IW:  $clog2(NUM_AXI_OUTSTANDING)
   };
 
 // pragma translate_off
