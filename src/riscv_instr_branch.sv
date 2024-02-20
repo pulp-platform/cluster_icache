@@ -2,6 +2,11 @@
 // Solderpad Hardware License, Version 0.51, see LICENSE for details.
 // SPDX-License-Identifier: SHL-0.51
 
+// Subset of riscv_instr from snitch repository:
+// https://github.com/pulp-platform/snitch_cluster/blob/main/hw/snitch/src/riscv_instr.sv
+//
+// The original file is automatically generated from the RISC-V Opcodes
+
 package riscv_instr_branch;
   localparam logic [31:0] BEQ                = 32'b?????????????????000?????1100011;
   localparam logic [31:0] BNE                = 32'b?????????????????001?????1100011;
