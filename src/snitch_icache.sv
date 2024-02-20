@@ -10,14 +10,14 @@
 module snitch_icache #(
   /// Number of request (fetch) ports
   parameter int unsigned NR_FETCH_PORTS = -1,
-  /// L0 Cache Line Count
+  /// L0 Cache Line Count (L0 is fully associative)
   parameter int unsigned L0_LINE_COUNT = -1,
   /// Cache Line Width
   parameter int unsigned LINE_WIDTH = -1,
   /// The number of cache lines per set. Power of two; >= 2.
   parameter int unsigned LINE_COUNT = -1,
   /// The set associativity of the cache. Power of two; >= 1.
-  parameter int unsigned SET_COUNT = 1,
+  parameter int unsigned WAY_COUNT = 1,
   /// Fetch interface address width. Same as FILL_AW; >= 1.
   parameter int unsigned FETCH_AW = -1,
   /// Fetch interface data width. Power of two; >= 8.
@@ -88,7 +88,7 @@ module snitch_icache #(
     LINE_WIDTH:         LINE_WIDTH,
     LINE_COUNT:         LINE_COUNT,
     L0_LINE_COUNT:      L0_LINE_COUNT,
-    SET_COUNT:          SET_COUNT,
+    WAY_COUNT:          WAY_COUNT,
     PENDING_COUNT:      NUM_AXI_OUTSTANDING,
     FETCH_AW:           FETCH_AW,
     FETCH_DW:           FETCH_DW,
@@ -103,7 +103,7 @@ module snitch_icache #(
     FILL_ALIGN:  $clog2(FILL_DW/8),
     LINE_ALIGN:  $clog2(LINE_WIDTH/8),
     COUNT_ALIGN: $clog2(LINE_COUNT),
-    SET_ALIGN:   $clog2(SET_COUNT),
+    SET_ALIGN:   $clog2(WAY_COUNT),
     TAG_WIDTH:   FETCH_AW - $clog2(LINE_WIDTH/8) - $clog2(LINE_COUNT),
     L0_TAG_WIDTH: FETCH_AW - $clog2(LINE_WIDTH/8),
     L0_EARLY_TAG_WIDTH:
@@ -119,7 +119,7 @@ module snitch_icache #(
     assert(L0_LINE_COUNT > 0);
     assert(LINE_WIDTH > 0);
     assert(LINE_COUNT > 1);
-    assert(SET_COUNT >= 2) else $warning("Only >= 2 sets are supported");
+    assert(WAY_COUNT >= 2) else $warning("Only >= 2 sets are supported");
     assert(FETCH_AW > 0);
     assert(FETCH_DW > 0);
     assert(FILL_AW > 0);
@@ -131,7 +131,7 @@ module snitch_icache #(
     assert(2**$clog2(LINE_COUNT) == LINE_COUNT)
       else $fatal(1, "Cache LINE_COUNT %0d is not a power of two", LINE_COUNT);
     // NOTE(fschuiki): I think the following is not needed
-    // assert(2**$clog2(SET_COUNT) == SET_COUNT) else $fatal(1, "Cache SET_COUNT %0d is not a power of two", SET_COUNT);
+    // assert(2**$clog2(WAY_COUNT) == WAY_COUNT) else $fatal(1, "Cache WAY_COUNT %0d is not a power of two", WAY_COUNT);
     assert(2**$clog2(FETCH_DW) == FETCH_DW)
       else $fatal(1, "Cache FETCH_DW %0d is not a power of two", FETCH_DW);
     assert(2**$clog2(FILL_DW) == FILL_DW)

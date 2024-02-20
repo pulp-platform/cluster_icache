@@ -19,7 +19,7 @@ package snitch_icache_pkg;
     int unsigned NR_FETCH_PORTS;
     int unsigned LINE_WIDTH;
     int unsigned LINE_COUNT;
-    int unsigned SET_COUNT;
+    int unsigned WAY_COUNT;
     int unsigned PENDING_COUNT;
     int unsigned L0_LINE_COUNT;
     int unsigned FETCH_AW;

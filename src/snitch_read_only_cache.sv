@@ -14,7 +14,7 @@ module snitch_read_only_cache #(
   /// The number of cache lines per set. Power of two; >= 2.
   parameter int unsigned LineCount    = -1,
   /// The set associativity of the cache. Power of two; >= 1.
-  parameter int unsigned SetCount     = 1,
+  parameter int unsigned WayCount     = 1,
   /// AXI address width
   parameter int unsigned AxiAddrWidth = 0,
   /// AXI data width
@@ -194,7 +194,7 @@ module snitch_read_only_cache #(
   localparam snitch_icache_pkg::config_t CFG = '{
     LINE_WIDTH:         LineWidth,
     LINE_COUNT:         LineCount,
-    SET_COUNT:          SetCount,
+    WAY_COUNT:          WayCount,
     PENDING_COUNT:      PendingCount,
     FETCH_AW:           AxiAddrWidth,
     FETCH_DW:           AxiDataWidth,
@@ -209,7 +209,7 @@ module snitch_read_only_cache #(
     FILL_ALIGN:    $clog2(AxiDataWidth/8),
     LINE_ALIGN:    $clog2(LineWidth/8),
     COUNT_ALIGN:   cf_math_pkg::idx_width(LineCount),
-    SET_ALIGN:     cf_math_pkg::idx_width(SetCount),
+    SET_ALIGN:     cf_math_pkg::idx_width(WayCount),
     TAG_WIDTH:     AxiAddrWidth - $clog2(LineWidth/8) - $clog2(LineCount) + 1,
     ID_WIDTH:      2**AxiIdWidth,
     PENDING_IW:    $clog2(PendingCount),

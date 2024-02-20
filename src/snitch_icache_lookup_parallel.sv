@@ -50,9 +50,9 @@ module snitch_icache_lookup_parallel #(
   // Multiplex read and write access to the RAMs onto one port, prioritizing
   // write accesses.
   logic [CFG.COUNT_ALIGN-1:0] ram_addr                             ;
-  logic [CFG.SET_COUNT-1:0]   ram_enable                           ;
-  logic [CFG.LINE_WIDTH-1:0]  ram_wdata, ram_rdata [CFG.SET_COUNT] ;
-  logic [CFG.TAG_WIDTH+1:0]   ram_wtag,  ram_rtag  [CFG.SET_COUNT] ;
+  logic [CFG.WAY_COUNT-1:0]   ram_enable                           ;
+  logic [CFG.LINE_WIDTH-1:0]  ram_wdata, ram_rdata [CFG.WAY_COUNT] ;
+  logic [CFG.TAG_WIDTH+1:0]   ram_wtag,  ram_rtag  [CFG.WAY_COUNT] ;
   logic                       ram_write                            ;
   logic                       ram_write_q;
   logic [CFG.COUNT_ALIGN:0]   init_count_q;
@@ -86,7 +86,7 @@ module snitch_icache_lookup_parallel #(
       ram_wtag   = '0;
     end else  if (write_valid_i) begin
       ram_addr   = write_addr_i;
-      ram_enable = CFG.SET_COUNT > 1 ? $unsigned(1 << write_set_i) : 1'b1;
+      ram_enable = CFG.WAY_COUNT > 1 ? $unsigned(1 << write_set_i) : 1'b1;
       ram_write  = 1'b1;
       write_ready_o = 1'b1;
     end else if (out_ready_i) begin
@@ -144,7 +144,7 @@ module snitch_icache_lookup_parallel #(
   end
 
   // Instantiate the RAM sets.
-  for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : g_sets
+  for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_sets
     tc_sram_impl #(
       .NumWords (CFG.LINE_COUNT),
       .DataWidth (CFG.TAG_WIDTH+2),
@@ -188,12 +188,12 @@ module snitch_icache_lookup_parallel #(
 
   // Determine which RAM line hit, and multiplex that data to the output.
   logic [CFG.TAG_WIDTH-1:0] required_tag;
-  logic [CFG.SET_COUNT-1:0] line_hit;
+  logic [CFG.WAY_COUNT-1:0] line_hit;
 
   always_comb begin
-    automatic logic [CFG.SET_COUNT-1:0] errors;
+    automatic logic [CFG.WAY_COUNT-1:0] errors;
     required_tag = addr_q[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
-    for (int i = 0; i < CFG.SET_COUNT; i++) begin
+    for (int i = 0; i < CFG.WAY_COUNT; i++) begin
       line_hit[i] = ram_rtag[i][CFG.TAG_WIDTH+1] &&
         ram_rtag[i][CFG.TAG_WIDTH-1:0] == required_tag;
       errors[i] = ram_rtag[i][CFG.TAG_WIDTH] && line_hit[i];
@@ -204,14 +204,14 @@ module snitch_icache_lookup_parallel #(
 
   always_comb begin
     for (int i = 0; i < CFG.LINE_WIDTH; i++) begin
-      automatic logic [CFG.SET_COUNT-1:0] masked;
-      for (int j = 0; j < CFG.SET_COUNT; j++)
+      automatic logic [CFG.WAY_COUNT-1:0] masked;
+      for (int j = 0; j < CFG.WAY_COUNT; j++)
           masked[j] = ram_rdata[j][i] & line_hit[j];
       data_d.data[i] = |masked;
     end
   end
 
-  lzc #(.WIDTH(CFG.SET_COUNT)) i_lzc (
+  lzc #(.WIDTH(CFG.WAY_COUNT)) i_lzc (
     .in_i     ( line_hit    ),
     .cnt_o    ( data_d.cset ),
     .empty_o  (             )
