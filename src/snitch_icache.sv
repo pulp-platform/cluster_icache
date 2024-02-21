@@ -99,6 +99,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
     EARLY_LATCH:        EARLY_LATCH,
     BUFFER_LOOKUP:      0,
     GUARANTEE_ORDERING: 0,
+    L1_PLRU:            1,
 
     FETCH_ALIGN: $clog2(FETCH_DW/8),
     FILL_ALIGN:  $clog2(FILL_DW/8),
