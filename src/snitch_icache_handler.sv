@@ -242,19 +242,62 @@ module snitch_icache_handler #(
     end
   end
 
-  // The cache line eviction LFSR is responsible for picking a cache line for
-  // replacement at random. Note that we assume that the entire cache is full,
-  // so no empty cache lines are available. This is the common case since we
-  // do not support flushing of the cache.
   logic [CFG.SET_ALIGN-1:0] evict_index;
   logic evict_enable;
 
-  snitch_icache_lfsr #(CFG.SET_ALIGN) i_evict_lfsr (
-    .clk_i    ( clk_i        ),
-    .rst_ni   ( rst_ni       ),
-    .value_o  ( evict_index  ),
-    .enable_i ( evict_enable )
-  );
+  if ( CFG.L1_PLRU ) begin : gen_plru
+
+    logic [CFG.LINE_COUNT-1:0][CFG.SET_COUNT-1:0] used_masks;
+    logic [CFG.LINE_COUNT-1:0][CFG.SET_COUNT-1:0] evict_masks;
+
+    always_comb begin
+      used_masks = '0;
+      if (in_req_valid_i && in_req_hit_i) begin
+        // hit update
+        used_masks[in_req_addr_i >> CFG.LINE_ALIGN][in_req_set_i] = 1'b1;
+      end else if (write_valid_o) begin
+        // refill update
+        used_masks[write_addr_o][write_set_o] = 1'b1;
+      end
+    end
+
+    for (genvar i = 0; i < CFG.LINE_COUNT; i++) begin : gen_plru_tree
+
+      plru_tree #(
+        .ENTRIES ( CFG.SET_COUNT )
+      ) i_plru_tree (
+        .clk_i,
+        .rst_ni,
+
+        .used_i ( used_masks [i] ),
+        .plru_o ( evict_masks[i] )
+      );
+
+    end
+
+    onehot_to_bin #(
+      .ONEHOT_WIDTH ( CFG.SET_COUNT )
+    ) i_evict_mask_to_index (
+      .onehot ( evict_masks[write_addr_o] ),
+      .bin    ( evict_index )
+    );
+
+  end else begin : gen_lfsr
+
+    // The cache line eviction LFSR is responsible for picking a cache line for
+    // replacement at random. Note that we assume that the entire cache is full,
+    // so no empty cache lines are available. This is the common case since we
+    // do not support flushing of the cache.
+    snitch_icache_lfsr #(
+      .N (CFG.SET_ALIGN)
+    ) i_evict_lfsr (
+      .clk_i    ( clk_i        ),
+      .rst_ni   ( rst_ni       ),
+      .value_o  ( evict_index  ),
+      .enable_i ( evict_enable )
+    );
+
+  end
 
   // The response handler deals with incoming refill responses. It queries and
   // clears the corresponding entry in the pending table, stores the data in

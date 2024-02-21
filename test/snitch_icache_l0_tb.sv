@@ -92,6 +92,7 @@ module snitch_icache_l0_tb #(
       BUFFER_LOOKUP:      BUFFER_LOOKUP,
       GUARANTEE_ORDERING: GUARANTEE_ORDERING,
       L0_PLRU:            1'b1,
+      L1_PLRU:            1'b1,
 
       FETCH_ALIGN: $clog2(FETCH_DW/8),
       FILL_ALIGN:  $clog2(FILL_DW/8),
