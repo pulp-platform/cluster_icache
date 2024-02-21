@@ -205,6 +205,7 @@ module snitch_read_only_cache #(
     BUFFER_LOOKUP:      1, // Mandatory here
     GUARANTEE_ORDERING: 1, // Mandatory here
     L0_PLRU:            0, // Unused here
+    L1_PLRU:            1,
 
     FETCH_ALIGN:   $clog2(AxiDataWidth/8),
     FILL_ALIGN:    $clog2(AxiDataWidth/8),
