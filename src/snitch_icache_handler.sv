@@ -156,7 +156,7 @@ module snitch_icache_handler #(
     .empty_o (                 )
   );
 
-  // Gurarntee ordering
+  // Guarantee ordering
   // Check if there is a miss in flight from this ID. In that case, stall all
   // further requests to guarantee correct ordering of requests.
   logic [CFG.ID_WIDTH_RESP-1:0] miss_in_flight_d, miss_in_flight_q;
@@ -276,10 +276,10 @@ module snitch_icache_handler #(
     pop_index  = out_rsp_id_i;
     pop_enable = 0;
 
-    write_addr_o  = pop_addr >> CFG.LINE_ALIGN;
+    write_addr_o  = pop_addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
     write_set_o   = evict_index;
     write_data_o  = out_rsp_data_i;
-    write_tag_o   = pop_addr >> (CFG.LINE_ALIGN + CFG.COUNT_ALIGN);
+    write_tag_o   = pop_addr[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
     write_error_o = out_rsp_error_i;
     write_valid_o = 0;
 

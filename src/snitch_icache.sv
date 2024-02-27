@@ -9,27 +9,29 @@
 
 module snitch_icache #(
   /// Number of request (fetch) ports
-  parameter int NR_FETCH_PORTS = -1,
+  parameter int unsigned NR_FETCH_PORTS = -1,
   /// L0 Cache Line Count
-  parameter int L0_LINE_COUNT = -1,
+  parameter int unsigned L0_LINE_COUNT = -1,
   /// Cache Line Width
-  parameter int LINE_WIDTH = -1,
+  parameter int unsigned LINE_WIDTH = -1,
   /// The number of cache lines per set. Power of two; >= 2.
-  parameter int LINE_COUNT = -1,
+  parameter int unsigned LINE_COUNT = -1,
   /// The set associativity of the cache. Power of two; >= 1.
-  parameter int SET_COUNT = 1,
+  parameter int unsigned SET_COUNT = 1,
   /// Fetch interface address width. Same as FILL_AW; >= 1.
-  parameter int FETCH_AW = -1,
+  parameter int unsigned FETCH_AW = -1,
   /// Fetch interface data width. Power of two; >= 8.
-  parameter int FETCH_DW = -1,
+  parameter int unsigned FETCH_DW = -1,
   /// Fill interface address width. Same as FETCH_AW; >= 1.
-  parameter int FILL_AW = -1,
+  parameter int unsigned FILL_AW = -1,
   /// Fill interface data width. Power of two; >= 8.
-  parameter int FILL_DW = -1,
+  parameter int unsigned FILL_DW = -1,
   /// Serialize the L1 lookup (parallel tag/data lookup by default)
   parameter bit SERIAL_LOOKUP = 0,
   /// Replace the L1 tag banks with latch-based SCM.
   parameter bit L1_TAG_SCM = 0,
+  /// Number of pending response beats for the L1 cache.
+  parameter int unsigned NUM_AXI_OUTSTANDING = 2,
   /// This reduces area impact at the cost of
   /// increased hassle of having latches in
   /// the design.
@@ -45,8 +47,8 @@ module snitch_icache #(
   /// Operate L0 cache in slower clock-domain
   parameter bit ISO_CROSSING      = 1,
   /// Configuration input types for memory cuts used in implementation.
-    parameter type sram_cfg_data_t  = logic,
-    parameter type sram_cfg_tag_t   = logic,
+  parameter type sram_cfg_data_t  = logic,
+  parameter type sram_cfg_tag_t   = logic,
 
   parameter type axi_req_t = logic,
   parameter type axi_rsp_t = logic
@@ -77,14 +79,13 @@ module snitch_icache #(
 
   // Bundle the parameters up into a proper configuration struct that we can
   // pass to submodules.
-  localparam int PendingCount = 2;
   localparam snitch_icache_pkg::config_t CFG = '{
     NR_FETCH_PORTS:     NR_FETCH_PORTS,
     LINE_WIDTH:         LINE_WIDTH,
     LINE_COUNT:         LINE_COUNT,
     L0_LINE_COUNT:      L0_LINE_COUNT,
     SET_COUNT:          SET_COUNT,
-    PENDING_COUNT:      PendingCount,
+    PENDING_COUNT:      NUM_AXI_OUTSTANDING,
     FETCH_AW:           FETCH_AW,
     FETCH_DW:           FETCH_DW,
     FILL_AW:            FILL_AW,
@@ -99,13 +100,13 @@ module snitch_icache #(
     LINE_ALIGN:  $clog2(LINE_WIDTH/8),
     COUNT_ALIGN: $clog2(LINE_COUNT),
     SET_ALIGN:   $clog2(SET_COUNT),
-    TAG_WIDTH:   FETCH_AW - $clog2(LINE_WIDTH/8) - $clog2(LINE_COUNT) + 1,
+    TAG_WIDTH:   FETCH_AW - $clog2(LINE_WIDTH/8) - $clog2(LINE_COUNT),
     L0_TAG_WIDTH: FETCH_AW - $clog2(LINE_WIDTH/8),
     L0_EARLY_TAG_WIDTH:
       (L0_EARLY_TAG_WIDTH == -1) ? FETCH_AW - $clog2(LINE_WIDTH/8) : L0_EARLY_TAG_WIDTH,
     ID_WIDTH_REQ: $clog2(NR_FETCH_PORTS) + 1,
     ID_WIDTH_RESP: 2*NR_FETCH_PORTS,
-    PENDING_IW:  $clog2(PendingCount)
+    PENDING_IW:  $clog2(NUM_AXI_OUTSTANDING)
   };
 
 // pragma translate_off
@@ -632,7 +633,8 @@ module l0_to_bypass #(
   // Mask address so that it is aligned to the cache-line width.
   logic [CFG.NR_FETCH_PORTS-1:0][CFG.FETCH_AW-1:0] in_addr_masked;
   for (genvar i = 0; i < CFG.NR_FETCH_PORTS; i++) begin : gen_masked_addr
-    assign in_addr_masked[i] = in_addr_i[i] >> CFG.LINE_ALIGN << CFG.LINE_ALIGN;
+    assign in_addr_masked[i] = {in_addr_i[i][CFG.FETCH_AW-1:CFG.LINE_ALIGN],
+                                {CFG.LINE_ALIGN{1'b0}}};
   end
   stream_arbiter #(
     .DATA_T ( logic [CFG.FETCH_AW-1:0] ),

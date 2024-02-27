@@ -16,33 +16,33 @@ package snitch_icache_pkg;
 
   typedef struct packed {
     // Parameters passed to the root module.
-    int NR_FETCH_PORTS;
-    int LINE_WIDTH;
-    int LINE_COUNT;
-    int SET_COUNT;
-    int PENDING_COUNT;
-    int L0_LINE_COUNT;
-    int FETCH_AW;
-    int FETCH_DW;
-    int FILL_AW;
-    int FILL_DW;
+    int unsigned NR_FETCH_PORTS;
+    int unsigned LINE_WIDTH;
+    int unsigned LINE_COUNT;
+    int unsigned SET_COUNT;
+    int unsigned PENDING_COUNT;
+    int unsigned L0_LINE_COUNT;
+    int unsigned FETCH_AW;
+    int unsigned FETCH_DW;
+    int unsigned FILL_AW;
+    int unsigned FILL_DW;
     bit L1_TAG_SCM;
     bit EARLY_LATCH;
     bit BUFFER_LOOKUP;
     bit GUARANTEE_ORDERING;
 
     // Derived values.
-    int FETCH_ALIGN;
-    int FILL_ALIGN;
-    int LINE_ALIGN;
-    int COUNT_ALIGN;
-    int SET_ALIGN;
-    int TAG_WIDTH;
-    int L0_TAG_WIDTH;
-    int L0_EARLY_TAG_WIDTH;
-    int ID_WIDTH_REQ;
-    int ID_WIDTH_RESP;
-    int PENDING_IW; // refill ID width
+    int unsigned FETCH_ALIGN;
+    int unsigned FILL_ALIGN;
+    int unsigned LINE_ALIGN;
+    int unsigned COUNT_ALIGN;
+    int unsigned SET_ALIGN;
+    int unsigned TAG_WIDTH;
+    int unsigned L0_TAG_WIDTH;
+    int unsigned L0_EARLY_TAG_WIDTH;
+    int unsigned ID_WIDTH_REQ;
+    int unsigned ID_WIDTH_RESP;
+    int unsigned PENDING_IW; // refill ID width
   } config_t;
 
 endpackage

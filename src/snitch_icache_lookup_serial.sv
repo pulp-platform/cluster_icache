@@ -106,7 +106,7 @@ module snitch_icache_lookup_serial #(
 
   // Multiplex read and write access to the tag banks onto one port, prioritizing write accesses
   always_comb begin
-    tag_addr   = in_addr_i >> CFG.LINE_ALIGN;
+    tag_addr   = in_addr_i[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
     tag_enable = '0;
     tag_wdata  = {1'b1, write_error_i, write_tag_i};
     tag_write  = 1'b0;
@@ -138,7 +138,7 @@ module snitch_icache_lookup_serial #(
   // Instantiate the tag sets.
   if (CFG.L1_TAG_SCM) begin : gen_scm
     for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : g_sets
-      latch_scm #(
+      register_file_1r_1w #(
         .ADDR_WIDTH ($clog2(CFG.LINE_COUNT)),
         .DATA_WIDTH (CFG.TAG_WIDTH+2       )
       ) i_tag (
@@ -177,17 +177,15 @@ module snitch_icache_lookup_serial #(
   end
 
   // Determine which set hit
-  always_comb begin
-    automatic logic [CFG.SET_COUNT-1:0] errors;
-    required_tag = tag_req_q.addr >> (CFG.LINE_ALIGN + CFG.COUNT_ALIGN);
-    for (int i = 0; i < CFG.SET_COUNT; i++) begin
-      line_hit[i] = tag_rdata[i][CFG.TAG_WIDTH+1] &&
-                    tag_rdata[i][CFG.TAG_WIDTH-1:0] == required_tag;
-      errors[i] = tag_rdata[i][CFG.TAG_WIDTH] && line_hit[i];
-    end
-    tag_rsp_s.hit = |line_hit;
-    tag_rsp_s.error = |errors;
+  logic [CFG.SET_COUNT-1:0] errors;
+  assign required_tag = tag_req_q.addr[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
+  for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : gen_line_hit
+    assign line_hit[i] = tag_rdata[i][CFG.TAG_WIDTH+1] &&
+                         tag_rdata[i][CFG.TAG_WIDTH-1:0] == required_tag; // check valid bit and tag
+    assign errors[i] = tag_rdata[i][CFG.TAG_WIDTH] && line_hit[i]; // check error bit
   end
+  assign tag_rsp_s.hit = |line_hit;
+  assign tag_rsp_s.error = |errors;
 
   lzc #(.WIDTH(CFG.SET_COUNT)) i_lzc (
     .in_i     ( line_hit       ),
@@ -235,13 +233,13 @@ module snitch_icache_lookup_serial #(
   typedef logic [CFG.LINE_WIDTH-1:0] data_rsp_t;
 
   logic [DataAddrWidth-1:0] data_addr;
-  logic                       data_enable;
-  data_rsp_t                  data_wdata, data_rdata;
-  logic                       data_write;
+  logic                     data_enable;
+  data_rsp_t                data_wdata, data_rdata;
+  logic                     data_write;
 
-  data_req_t                  data_req_d, data_req_q;
-  data_rsp_t                  data_rsp_q;
-  logic                       data_valid, data_ready;
+  data_req_t                data_req_d, data_req_q;
+  data_rsp_t                data_rsp_q;
+  logic                     data_valid, data_ready;
 
   // Connect tag stage response to data stage request
   assign data_req_d.addr  = tag_req_q.addr;
