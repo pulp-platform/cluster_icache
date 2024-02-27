@@ -26,6 +26,8 @@ module snitch_icache #(
   parameter int unsigned FILL_AW = -1,
   /// Fill interface data width. Power of two; >= 8.
   parameter int unsigned FILL_DW = -1,
+  /// Extra parity bits to add to a line for L1 reliability.
+  parameter int unsigned L1_DATA_PARITY_BITS = 0,
   /// Serialize the L1 lookup (parallel tag/data lookup by default)
   parameter bit SERIAL_LOOKUP = 0,
   /// Replace the L1 tag banks with latch-based SCM.
@@ -90,6 +92,7 @@ module snitch_icache #(
     FETCH_DW:           FETCH_DW,
     FILL_AW:            FILL_AW,
     FILL_DW:            FILL_DW,
+    L1_DATA_PARITY_BITS: L1_DATA_PARITY_BITS,
     L1_TAG_SCM:         L1_TAG_SCM,
     EARLY_LATCH:        EARLY_LATCH,
     BUFFER_LOOKUP:      0,
