@@ -241,6 +241,11 @@ module snitch_icache_lookup_serial #(
   data_rsp_t                data_rsp_q;
   logic                     data_valid, data_ready;
 
+  logic                     refill_hit_d, refill_hit_q;
+  data_rsp_t                refill_wdata_q, proper_rdata;
+  logic [CFG.SET_ALIGN-1:0] write_set_q;
+  logic                     write_error_q;
+
   // Connect tag stage response to data stage request
   assign data_req_d.addr  = tag_req_q.addr;
   assign data_req_d.id    = tag_req_q.id;
@@ -286,26 +291,37 @@ module snitch_icache_lookup_serial #(
 
   // Buffer the metadata on a valid handshake. Stall on write (implicit in tag_ready)
   `FFL(data_req_q, data_req_d, tag_valid && tag_ready, '0, clk_i, rst_ni)
-  `FF(data_valid, (tag_valid && !data_write) ? 1'b1 : data_ready ? 1'b0 : data_valid,
-      '0, clk_i, rst_ni)
-  // Ready if buffer is empy or downstream is reading. Stall on write
-  assign tag_ready = (!data_valid || data_ready) && !data_write;
+  `FF(data_valid, (tag_valid && (!data_write || refill_hit_d)) ?
+                  1'b1 : data_ready ? 1'b0 : data_valid, '0, clk_i, rst_ni)
+  // Ready if buffer is empty or downstream is reading. Stall on write
+  assign tag_ready = (!data_valid || data_ready) && (!data_write || refill_hit_d);
 
   // Register the handshake of the tag stage to buffer the data output data in the next cycle
   // but only if it was a hit. Otherwise, the data is not read anyway.
-  `FF(tag_handshake, tag_valid && tag_ready && data_req_d.hit, 1'b0, clk_i, rst_ni)
+  `FF(tag_handshake, tag_valid && tag_ready && (data_req_d.hit || refill_hit_d),
+      1'b0, clk_i, rst_ni)
 
   // Fall-through buffer the read data: Store the read data if the SRAM bank accepted a request in
   // the previous cycle and if we actually have to buffer them because the receiver is not ready
-  `FFL(data_rsp_q, data_rdata, tag_handshake && !data_ready, '0, clk_i, rst_ni)
-  assign out_data_o = tag_handshake ? data_rdata : data_rsp_q;
+  `FFL(data_rsp_q, proper_rdata, tag_handshake && !data_ready, '0, clk_i, rst_ni)
+  assign proper_rdata = refill_hit_q && !data_req_q.hit ? refill_wdata_q : data_rdata;
+  assign out_data_o = tag_handshake ? proper_rdata : data_rsp_q;
+
+  // Check immediate refill for possible match
+  assign refill_hit_d = write_valid_i &&
+                        write_tag_i == required_tag &&
+                        write_addr_i == data_req_d.addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
+  `FFL(refill_hit_q, refill_hit_d, tag_valid && tag_ready, '0, clk_i, rst_ni)
+  `FFL(refill_wdata_q, write_data_i, refill_hit_d, '0, clk_i, rst_ni)
+  `FFL(write_set_q, write_set_i, refill_hit_d, '0, clk_i, rst_ni)
+  `FFL(write_error_q, write_error_i, refill_hit_d, '0, clk_i, rst_ni)
 
   // Generate the remaining output signals.
   assign out_addr_o  = data_req_q.addr;
   assign out_id_o    = data_req_q.id;
-  assign out_set_o   = data_req_q.cset;
-  assign out_hit_o   = data_req_q.hit;
-  assign out_error_o = data_req_q.error;
+  assign out_set_o   = refill_hit_q && !data_req_q.hit ? write_set_q : data_req_q.cset;
+  assign out_hit_o   = refill_hit_q || data_req_q.hit;
+  assign out_error_o = refill_hit_q && !data_req_q.hit ? write_error_q : data_req_q.error;
   assign out_valid_o = data_valid;
   assign data_ready  = out_ready_i;
 
