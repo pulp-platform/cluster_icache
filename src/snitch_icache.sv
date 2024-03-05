@@ -359,7 +359,7 @@ module snitch_icache #(
 
     for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prio
       // prioritize fetches over prefetches
-      assign prefetch_req_priority[i] = ~prefetch_req[i].id[0];
+      assign prefetch_req_priority[i] = prefetch_req[i].id[2*i];
 
       assign prefetch_req_ready[i] = prefetch_req_priority[i] ? prefetch_req_ready_fetch[i] :
                                                                 prefetch_req_ready_pre[i];
