@@ -26,6 +26,8 @@ module snitch_icache #(
   parameter int unsigned FILL_AW = -1,
   /// Fill interface data width. Power of two; >= 8.
   parameter int unsigned FILL_DW = -1,
+  /// Allow fetches to have priority over prefetches for L0 to L1
+  parameter bit FETCH_PRIORITY = 1'b0,
   /// Serialize the L1 lookup (parallel tag/data lookup by default)
   parameter bit SERIAL_LOOKUP = 0,
   /// Replace the L1 tag banks with latch-based SCM.
@@ -346,19 +348,85 @@ module snitch_icache #(
 
   /// Arbitrate cache port
   // 1. Request Side
-  stream_arbiter #(
-    .DATA_T ( prefetch_req_t ),
-    .N_INP  ( NR_FETCH_PORTS )
-  ) i_stream_arbiter (
-    .clk_i,
-    .rst_ni,
-    .inp_data_i  ( prefetch_req              ),
-    .inp_valid_i ( prefetch_req_valid        ),
-    .inp_ready_o ( prefetch_req_ready        ),
-    .oup_data_o  ( prefetch_lookup_req       ),
-    .oup_valid_o ( prefetch_lookup_req_valid ),
-    .oup_ready_i ( prefetch_lookup_req_ready )
-  );
+  if (FETCH_PRIORITY) begin : gen_fetch_priority
+
+    logic [NR_FETCH_PORTS-1:0] prefetch_req_priority;
+    logic [NR_FETCH_PORTS-1:0] prefetch_req_ready_pre, prefetch_req_ready_fetch;
+    prefetch_req_t             prefetch_lookup_req_pre, prefetch_lookup_req_fetch;
+    logic                      prefetch_lookup_req_valid_pre, prefetch_lookup_req_valid_fetch;
+    logic                      prefetch_lookup_req_ready_pre, prefetch_lookup_req_ready_fetch;
+    logic                      lock_pre_d, lock_pre_q;
+
+
+    for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prio
+      // prioritize fetches over prefetches
+      assign prefetch_req_priority[i] = ~prefetch_req[i].id[0];
+
+      assign prefetch_req_ready[i] = prefetch_req_priority[i] ? prefetch_req_ready_fetch[i] :
+                                                                prefetch_req_ready_pre[i];
+    end
+
+    assign prefetch_lookup_req_valid = prefetch_lookup_req_valid_pre |
+                                       prefetch_lookup_req_valid_fetch;
+    assign prefetch_lookup_req = prefetch_lookup_req_valid_fetch && !lock_pre_q ?
+                                 prefetch_lookup_req_fetch :
+                                 prefetch_lookup_req_pre;
+
+    assign lock_pre_d = (lock_pre_q |
+                         (~prefetch_lookup_req_valid_fetch &
+                          prefetch_lookup_req_valid_pre     )) &
+                        ~prefetch_lookup_req_ready;
+
+    // prefetch arbiter - low priority
+    stream_arbiter #(
+      .DATA_T ( prefetch_req_t ),
+      .N_INP  ( NR_FETCH_PORTS )
+    ) i_stream_arbiter_pre (
+      .clk_i,
+      .rst_ni,
+      .inp_data_i  ( prefetch_req                  ),
+      .inp_valid_i ( prefetch_req_valid & ~prefetch_req_priority ),
+      .inp_ready_o ( prefetch_req_ready_pre        ),
+      .oup_data_o  ( prefetch_lookup_req_pre       ),
+      .oup_valid_o ( prefetch_lookup_req_valid_pre ),
+      .oup_ready_i ( prefetch_lookup_req_valid_fetch && !lock_pre_q ?
+                     1'b0 : prefetch_lookup_req_ready )
+    );
+
+    // fetch arbiter - high priority
+    stream_arbiter #(
+      .DATA_T ( prefetch_req_t ),
+      .N_INP  ( NR_FETCH_PORTS )
+    ) i_stream_arbiter_fetch (
+      .clk_i,
+      .rst_ni,
+      .inp_data_i  ( prefetch_req                    ),
+      .inp_valid_i ( prefetch_req_valid & prefetch_req_priority ),
+      .inp_ready_o ( prefetch_req_ready_fetch        ),
+      .oup_data_o  ( prefetch_lookup_req_fetch       ),
+      .oup_valid_o ( prefetch_lookup_req_valid_fetch ),
+      .oup_ready_i ( lock_pre_q ? 1'b0 : prefetch_lookup_req_ready )
+    );
+
+    `FF(lock_pre_q, lock_pre_d, '0)
+
+  end else begin : gen_standard_fetch
+
+    stream_arbiter #(
+      .DATA_T ( prefetch_req_t ),
+      .N_INP  ( NR_FETCH_PORTS )
+    ) i_stream_arbiter (
+      .clk_i,
+      .rst_ni,
+      .inp_data_i  ( prefetch_req              ),
+      .inp_valid_i ( prefetch_req_valid        ),
+      .inp_ready_o ( prefetch_req_ready        ),
+      .oup_data_o  ( prefetch_lookup_req       ),
+      .oup_valid_o ( prefetch_lookup_req_valid ),
+      .oup_ready_i ( prefetch_lookup_req_ready )
+    );
+
+  end
 
   // 2. Response Side
   // This breaks if the pre-fetcher would not alway be ready
