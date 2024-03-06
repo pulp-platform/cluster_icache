@@ -360,6 +360,7 @@ module snitch_icache #(
     logic                      prefetch_lookup_req_valid_pre, prefetch_lookup_req_valid_fetch;
     logic                      prefetch_lookup_req_ready_pre, prefetch_lookup_req_ready_fetch;
     logic                      lock_pre_d, lock_pre_q;
+    logic                      prefetch_filtered_ready, fetch_filtered_ready;
 
 
     for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prio
@@ -367,7 +368,7 @@ module snitch_icache #(
       assign prefetch_req_priority[i] = prefetch_req[i].id[2*i];
 
       assign prefetch_req_ready_tmp[i] = prefetch_req_priority[i] ? prefetch_req_ready_fetch[i] :
-                                                                    prefetch_req_ready_pre[i]; // TODO: this may break lock-in of the arbiter as fetches and prefetches may be served unbenounced to the arbiter!
+                                                                    prefetch_req_ready_pre[i];
     end
 
     assign prefetch_lookup_req_valid = prefetch_lookup_req_valid_pre |
@@ -381,6 +382,20 @@ module snitch_icache #(
                           prefetch_lookup_req_valid_pre     )) &
                         ~prefetch_lookup_req_ready;
 
+    // Suppress ready if fetch is valid and if the prefetcher is not locked
+    // If merge fetches, still give ready if addresses match
+    assign prefetch_filtered_ready = (prefetch_lookup_req_valid_fetch && !lock_pre_q) &&
+                                  !(MERGE_FETCHES &&
+                                    prefetch_lookup_req_pre.addr == prefetch_lookup_req_fetch.addr)
+                                  ? 1'b0 : prefetch_lookup_req_ready;
+
+    // Suppress ready if locked to prefetcher
+    // If merge fetches, still give ready if addresses match
+    assign fetch_filtered_ready = lock_pre_q &&
+                                  !(MERGE_FETCHES &&
+                                    prefetch_lookup_req_pre.addr == prefetch_lookup_req_fetch.addr)
+                                  ? 1'b0 : prefetch_lookup_req_ready;
+
     // prefetch arbiter - low priority
     stream_arbiter #(
       .DATA_T ( prefetch_req_t ),
@@ -393,8 +408,7 @@ module snitch_icache #(
       .inp_ready_o ( prefetch_req_ready_pre        ),
       .oup_data_o  ( prefetch_lookup_req_pre       ),
       .oup_valid_o ( prefetch_lookup_req_valid_pre ),
-      .oup_ready_i ( prefetch_lookup_req_valid_fetch && !lock_pre_q ?
-                     1'b0 : prefetch_lookup_req_ready )
+      .oup_ready_i ( prefetch_filtered_ready       )
     );
 
     // fetch arbiter - high priority
@@ -409,7 +423,7 @@ module snitch_icache #(
       .inp_ready_o ( prefetch_req_ready_fetch        ),
       .oup_data_o  ( prefetch_lookup_req_fetch       ),
       .oup_valid_o ( prefetch_lookup_req_valid_fetch ),
-      .oup_ready_i ( lock_pre_q ? 1'b0 : prefetch_lookup_req_ready )
+      .oup_ready_i ( fetch_filtered_ready            )
     );
 
     `FF(lock_pre_q, lock_pre_d, '0)
