@@ -12,7 +12,7 @@ package snitch_icache_pkg;
     logic l0_prefetch;
     logic l0_double_hit;
     logic l0_stall;
-  } icache_events_t;
+  } icache_l0_events_t;
 
   typedef struct packed {
     // Parameters passed to the root module.
