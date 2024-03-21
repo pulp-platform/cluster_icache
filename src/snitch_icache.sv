@@ -7,7 +7,7 @@
 
 `include "common_cells/registers.svh"
 
-module snitch_icache #(
+module snitch_icache import snitch_icache_pkg::*; #(
   /// Number of request (fetch) ports
   parameter int unsigned NR_FETCH_PORTS = -1,
   /// L0 Cache Line Count (L0 is fully associative)
@@ -61,8 +61,8 @@ module snitch_icache #(
   input  logic clk_d2_i,
   input  logic rst_ni,
 
-  input  logic                               enable_prefetching_i,
-  output snitch_icache_pkg::icache_events_t [NR_FETCH_PORTS-1:0] icache_events_o,
+  input  logic                                    enable_prefetching_i,
+  output icache_l0_events_t [NR_FETCH_PORTS-1:0]  icache_l0_events_o,
 
   input  logic [NR_FETCH_PORTS-1:0]               flush_valid_i,
   output logic [NR_FETCH_PORTS-1:0]               flush_ready_o,
@@ -237,7 +237,7 @@ module snitch_icache #(
       .rst_ni,
       .flush_valid_i   ( flush_valid_i      [i]   ),
       .enable_prefetching_i,
-      .icache_events_o ( icache_events_o    [i]   ),
+      .icache_events_o ( icache_l0_events_o [i]   ),
       .in_addr_i       ( inst_addr_i        [i]   ),
       .in_data_o       ( in_cache_data      [i]   ),
       .in_error_o      ( in_cache_error     [i]   ),
