@@ -379,12 +379,15 @@ module snitch_read_only_cache_tb #(
     .enable_i      ( 1'b1                ),
     .flush_valid_i ( 1'b0                ),
     .flush_ready_o ( /*unused*/          ),
+    .icache_events_o (  ),
     .start_addr_i  ( {CachedRegionStart} ),
     .end_addr_i    ( {CachedRegionEnd}   ),
     .axi_slv_req_i ( axi_mst_req         ),
     .axi_slv_rsp_o ( axi_mst_resp        ),
     .axi_mst_req_o ( axi_slv_req         ),
-    .axi_mst_rsp_i ( axi_slv_resp        )
+    .axi_mst_rsp_i ( axi_slv_resp        ),
+    .sram_cfg_data_i('0),
+    .sram_cfg_tag_i ('0)
   );
 
   task static cycle_start;
