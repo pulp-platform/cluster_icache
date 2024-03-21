@@ -235,25 +235,25 @@ module snitch_icache #(
     ) i_snitch_icache_l0 (
       .clk_i ( clk_d2_i ),
       .rst_ni,
-      .flush_valid_i   ( flush_valid_i[i]       ),
+      .flush_valid_i   ( flush_valid_i      [i]   ),
       .enable_prefetching_i,
-      .icache_events_o ( icache_events_o [i]    ),
-      .in_addr_i       ( inst_addr_i    [i]     ),
-      .in_data_o       ( in_cache_data  [i]     ),
-      .in_error_o      ( in_cache_error [i]     ),
-      .in_valid_i      ( in_cache_valid [i]     ),
-      .in_ready_o      ( in_cache_ready [i]     ),
+      .icache_events_o ( icache_events_o    [i]   ),
+      .in_addr_i       ( inst_addr_i        [i]   ),
+      .in_data_o       ( in_cache_data      [i]   ),
+      .in_error_o      ( in_cache_error     [i]   ),
+      .in_valid_i      ( in_cache_valid     [i]   ),
+      .in_ready_o      ( in_cache_ready     [i]   ),
 
-      .out_req_addr_o  ( local_prefetch_req.addr   ),
-      .out_req_id_o    ( local_prefetch_req.id     ),
+      .out_req_addr_o  ( local_prefetch_req.addr  ),
+      .out_req_id_o    ( local_prefetch_req.id    ),
       .out_req_valid_o ( local_prefetch_req_valid ),
       .out_req_ready_i ( local_prefetch_req_ready ),
 
-      .out_rsp_data_i  ( local_prefetch_rsp.data   ),
-      .out_rsp_error_i ( local_prefetch_rsp.error  ),
-      .out_rsp_id_i    ( local_prefetch_rsp.id     ),
-      .out_rsp_valid_i ( local_prefetch_rsp_valid  ),
-      .out_rsp_ready_o ( local_prefetch_rsp_ready  )
+      .out_rsp_data_i  ( local_prefetch_rsp.data  ),
+      .out_rsp_error_i ( local_prefetch_rsp.error ),
+      .out_rsp_id_i    ( local_prefetch_rsp.id    ),
+      .out_rsp_valid_i ( local_prefetch_rsp_valid ),
+      .out_rsp_ready_o ( local_prefetch_rsp_ready )
     );
 
     isochronous_spill_register  #(
@@ -526,37 +526,37 @@ module snitch_icache #(
 
   if (SERIAL_LOOKUP) begin : gen_serial_lookup
     snitch_icache_lookup_serial #(
-      .CFG (CFG),
-      .sram_cfg_tag_t (sram_cfg_tag_t),
-      .sram_cfg_data_t (sram_cfg_data_t)
+      .CFG             ( CFG             ),
+      .sram_cfg_tag_t  ( sram_cfg_tag_t  ),
+      .sram_cfg_data_t ( sram_cfg_data_t )
     ) i_lookup (
       .clk_i,
       .rst_ni,
 
-      .flush_valid_i (flush_valid_lookup  ),
-      .flush_ready_o (flush_ready_lookup  ),
+      .flush_valid_i   ( flush_valid_lookup        ),
+      .flush_ready_o   ( flush_ready_lookup        ),
 
-      .in_addr_i     ( prefetch_lookup_req.addr  ),
-      .in_id_i       ( prefetch_lookup_req.id    ),
-      .in_valid_i    ( prefetch_lookup_req_valid ),
-      .in_ready_o    ( prefetch_lookup_req_ready ),
+      .in_addr_i       ( prefetch_lookup_req.addr  ),
+      .in_id_i         ( prefetch_lookup_req.id    ),
+      .in_valid_i      ( prefetch_lookup_req_valid ),
+      .in_ready_o      ( prefetch_lookup_req_ready ),
 
-      .out_addr_o    ( lookup_addr        ),
-      .out_id_o      ( lookup_id          ),
-      .out_set_o     ( lookup_set         ),
-      .out_hit_o     ( lookup_hit         ),
-      .out_data_o    ( lookup_data        ),
-      .out_error_o   ( lookup_error       ),
-      .out_valid_o   ( lookup_valid       ),
-      .out_ready_i   ( lookup_ready       ),
+      .out_addr_o      ( lookup_addr               ),
+      .out_id_o        ( lookup_id                 ),
+      .out_set_o       ( lookup_set                ),
+      .out_hit_o       ( lookup_hit                ),
+      .out_data_o      ( lookup_data               ),
+      .out_error_o     ( lookup_error              ),
+      .out_valid_o     ( lookup_valid              ),
+      .out_ready_i     ( lookup_ready              ),
 
-      .write_addr_i  ( write_addr         ),
-      .write_set_i   ( write_set          ),
-      .write_data_i  ( write_data         ),
-      .write_tag_i   ( write_tag          ),
-      .write_error_i ( write_error        ),
-      .write_valid_i ( write_valid        ),
-      .write_ready_o ( write_ready        ),
+      .write_addr_i    ( write_addr                ),
+      .write_set_i     ( write_set                 ),
+      .write_data_i    ( write_data                ),
+      .write_tag_i     ( write_tag                 ),
+      .write_error_i   ( write_error               ),
+      .write_valid_i   ( write_valid               ),
+      .write_ready_o   ( write_ready               ),
 
       .sram_cfg_tag_i,
       .sram_cfg_data_i
@@ -564,37 +564,37 @@ module snitch_icache #(
 
   end else begin : gen_parallel_lookup
     snitch_icache_lookup_parallel #(
-      .CFG (CFG),
-      .sram_cfg_tag_t (sram_cfg_tag_t),
-      .sram_cfg_data_t (sram_cfg_data_t)
+      .CFG             ( CFG             ),
+      .sram_cfg_tag_t  ( sram_cfg_tag_t  ),
+      .sram_cfg_data_t ( sram_cfg_data_t )
     ) i_lookup (
       .clk_i,
       .rst_ni,
 
-      .flush_valid_i (flush_valid_lookup  ),
-      .flush_ready_o (flush_ready_lookup  ),
+      .flush_valid_i   ( flush_valid_lookup        ),
+      .flush_ready_o   ( flush_ready_lookup        ),
 
-      .in_addr_i     ( prefetch_lookup_req.addr  ),
-      .in_id_i       ( prefetch_lookup_req.id    ),
-      .in_valid_i    ( prefetch_lookup_req_valid ),
-      .in_ready_o    ( prefetch_lookup_req_ready ),
+      .in_addr_i       ( prefetch_lookup_req.addr  ),
+      .in_id_i         ( prefetch_lookup_req.id    ),
+      .in_valid_i      ( prefetch_lookup_req_valid ),
+      .in_ready_o      ( prefetch_lookup_req_ready ),
 
-      .out_addr_o    ( lookup_addr        ),
-      .out_id_o      ( lookup_id          ),
-      .out_set_o     ( lookup_set         ),
-      .out_hit_o     ( lookup_hit         ),
-      .out_data_o    ( lookup_data        ),
-      .out_error_o   ( lookup_error       ),
-      .out_valid_o   ( lookup_valid       ),
-      .out_ready_i   ( lookup_ready       ),
+      .out_addr_o      ( lookup_addr               ),
+      .out_id_o        ( lookup_id                 ),
+      .out_set_o       ( lookup_set                ),
+      .out_hit_o       ( lookup_hit                ),
+      .out_data_o      ( lookup_data               ),
+      .out_error_o     ( lookup_error              ),
+      .out_valid_o     ( lookup_valid              ),
+      .out_ready_i     ( lookup_ready              ),
 
-      .write_addr_i  ( write_addr         ),
-      .write_set_i   ( write_set          ),
-      .write_data_i  ( write_data         ),
-      .write_tag_i   ( write_tag          ),
-      .write_error_i ( write_error        ),
-      .write_valid_i ( write_valid        ),
-      .write_ready_o ( write_ready        ),
+      .write_addr_i    ( write_addr                ),
+      .write_set_i     ( write_set                 ),
+      .write_data_i    ( write_data                ),
+      .write_tag_i     ( write_tag                 ),
+      .write_error_i   ( write_error               ),
+      .write_valid_i   ( write_valid               ),
+      .write_ready_o   ( write_ready               ),
 
       .sram_cfg_tag_i,
       .sram_cfg_data_i
