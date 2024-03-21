@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Rename `SET_COUNT` to `WAY_COUNT` to correct terminology, as it reflects the number of ways in a set.
 
+### Added
+- Add statistics signals output for shared L1.
+
 ## 0.1.1 - 28.06.2024
 ### Added
 - Allow fetches to bypass prefetches in L1.
