@@ -7,8 +7,8 @@
 `include "common_cells/registers.svh"
 
 /// An actual cache lookup.
-module snitch_icache_lookup_serial #(
-  parameter snitch_icache_pkg::config_t CFG = '0,
+module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
+  parameter config_t CFG = '0,
   /// Configuration input types for SRAMs used in implementation.
   parameter type sram_cfg_data_t  = logic,
   parameter type sram_cfg_tag_t   = logic
@@ -18,6 +18,7 @@ module snitch_icache_lookup_serial #(
 
   input  logic                       flush_valid_i,
   output logic                       flush_ready_o,
+  output icache_l1_events_t          icache_events_o,
 
   input  logic [CFG.FETCH_AW-1:0]    in_addr_i,
   input  logic [CFG.ID_WIDTH-1:0]    in_id_i,
@@ -324,5 +325,16 @@ module snitch_icache_lookup_serial #(
   assign out_error_o = refill_hit_q && !data_req_q.hit ? write_error_q : data_req_q.error;
   assign out_valid_o = data_valid;
   assign data_ready  = out_ready_i;
+
+  // ------------------
+  // Performance Events
+  // ------------------
+  always_comb begin
+    icache_events_o = '0;
+    icache_events_o.l1_miss = req_handshake & ~tag_rsp_s.hit;
+    icache_events_o.l1_hit = req_handshake & tag_rsp_s.hit;
+    icache_events_o.l1_stall = in_valid_i & ~in_ready_o;
+    icache_events_o.l1_handler_stall = out_valid_o & ~out_ready_i;
+  end
 
 endmodule
