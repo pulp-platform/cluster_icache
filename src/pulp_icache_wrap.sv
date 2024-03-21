@@ -61,7 +61,8 @@ module pulp_icache_wrap #(
   output logic [NumFetchPorts-1:0]                              fetch_rerror_o,
 
   input  logic                                                  enable_prefetching_i,
-  output snitch_icache_pkg::icache_events_t [NumFetchPorts-1:0] icache_events_o,
+  output snitch_icache_pkg::icache_l0_events_t [NumFetchPorts-1:0] icache_l0_events_o,
+  output snitch_icache_pkg::icache_l1_events_t                  icache_l1_events_o,
   input  logic [NumFetchPorts-1:0]                              flush_valid_i,
   output logic [NumFetchPorts-1:0]                              flush_ready_o,
 
@@ -218,7 +219,8 @@ module pulp_icache_wrap #(
     .rst_ni,
 
     .enable_prefetching_i,
-    .icache_events_o,
+    .icache_l0_events_o,
+    .icache_l1_events_o,
     .flush_valid_i,
     .flush_ready_o,
 

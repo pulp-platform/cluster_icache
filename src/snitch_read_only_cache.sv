@@ -8,7 +8,7 @@
 /// Serve read memory requests from a read-only cache.
 /// The cacheable region can be runtime configured. All writes and read
 /// requests outside the configured regions will be forwarded.
-module snitch_read_only_cache #(
+module snitch_read_only_cache import snitch_icache_pkg::*; #(
   /// Cache Line Width
   parameter int unsigned LineWidth    = -1,
   /// The number of cache lines per set. Power of two; >= 2.
@@ -39,6 +39,7 @@ module snitch_read_only_cache #(
   input  logic                                     enable_i,
   input  logic                                     flush_valid_i,
   output logic                                     flush_ready_o,
+  output icache_l1_events_t                        icache_events_o,
   input  logic [NrAddrRules-1:0][AxiAddrWidth-1:0] start_addr_i,
   input  logic [NrAddrRules-1:0][AxiAddrWidth-1:0] end_addr_i,
   input  slv_req_t                                 axi_slv_req_i,
@@ -191,7 +192,7 @@ module snitch_read_only_cache #(
   // Cache Logic
   // --------------------------------------------------
   localparam int unsigned PendingCount = MaxTrans;
-  localparam snitch_icache_pkg::config_t CFG = '{
+  localparam config_t CFG = '{
     LINE_WIDTH:         LineWidth,
     LINE_COUNT:         LineCount,
     SET_COUNT:          SetCount,
@@ -293,6 +294,7 @@ module snitch_read_only_cache #(
 
       .flush_valid_i ( flush_valid_i ),
       .flush_ready_o ( flush_ready_o ),
+      .icache_events_o,
 
       .in_addr_i     ( in_addr       ),
       .in_id_i       ( in_id         ),
@@ -330,6 +332,7 @@ module snitch_read_only_cache #(
 
       .flush_valid_i ( flush_valid_i ),
       .flush_ready_o ( flush_ready_o ),
+      .icache_events_o,
 
       .in_addr_i     ( in_addr       ),
       .in_id_i       ( in_id         ),

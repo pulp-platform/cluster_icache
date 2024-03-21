@@ -15,6 +15,13 @@ package snitch_icache_pkg;
   } icache_l0_events_t;
 
   typedef struct packed {
+    logic l1_miss;
+    logic l1_hit;
+    logic l1_stall;
+    logic l1_handler_stall;
+  } icache_l1_events_t;
+
+  typedef struct packed {
     // Parameters passed to the root module.
     int unsigned NR_FETCH_PORTS;
     int unsigned LINE_WIDTH;

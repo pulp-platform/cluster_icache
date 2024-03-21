@@ -63,6 +63,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
 
   input  logic                                    enable_prefetching_i,
   output icache_l0_events_t [NR_FETCH_PORTS-1:0]  icache_l0_events_o,
+  output icache_l1_events_t                       icache_l1_events_o,
 
   input  logic [NR_FETCH_PORTS-1:0]               flush_valid_i,
   output logic [NR_FETCH_PORTS-1:0]               flush_ready_o,
@@ -535,6 +536,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
 
       .flush_valid_i   ( flush_valid_lookup        ),
       .flush_ready_o   ( flush_ready_lookup        ),
+      .icache_events_o ( icache_l1_events_o        ),
 
       .in_addr_i       ( prefetch_lookup_req.addr  ),
       .in_id_i         ( prefetch_lookup_req.id    ),
@@ -573,6 +575,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
 
       .flush_valid_i   ( flush_valid_lookup        ),
       .flush_ready_o   ( flush_ready_lookup        ),
+      .icache_events_o ( icache_l1_events_o        ),
 
       .in_addr_i       ( prefetch_lookup_req.addr  ),
       .in_id_i         ( prefetch_lookup_req.id    ),
