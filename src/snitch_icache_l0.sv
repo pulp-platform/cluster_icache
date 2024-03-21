@@ -197,21 +197,46 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   // -------
   // Evictor
   // -------
-  logic [$clog2(CFG.L0_LINE_COUNT)-1:0] cnt_d, cnt_q;
 
-  always_comb begin : evictor
-    evict_strb = '0;
-    cnt_d = cnt_q;
+  if (CFG.L0_PLRU) begin : gen_plru
 
-    // Round-Robin
-    if (evict_req) begin
-      evict_strb = 1 << cnt_q;
-      cnt_d = cnt_q + 1;
-      if (evict_strb == hit_early) begin
-        evict_strb = 1 << cnt_d;
-        cnt_d = cnt_q + 2;
+    logic [CFG.L0_LINE_COUNT-1:0] hit_plru;
+    logic [CFG.L0_LINE_COUNT-1:0] evict_plru;
+
+    // Update plru on hit and on miss eviction, prefetch only once fetch hits
+    assign hit_plru = hit | (evict_because_miss ? evict_strb : '0);
+    assign evict_strb = evict_req ? evict_plru : '0;
+
+    plru_tree #(
+      .ENTRIES(CFG.L0_LINE_COUNT)
+    ) i_plru_tree (
+      .clk_i,
+      .rst_ni,
+      .used_i ( hit_plru ),
+      .plru_o ( evict_plru )
+    );
+
+  end else begin : gen_round_robin
+
+    logic [$clog2(CFG.L0_LINE_COUNT)-1:0] cnt_d, cnt_q;
+
+    always_comb begin : evictor
+      evict_strb = '0;
+      cnt_d = cnt_q;
+
+      // Round-Robin
+      if (evict_req) begin
+        evict_strb = 1 << cnt_q;
+        cnt_d = cnt_q + 1;
+        if (evict_strb == hit_early) begin
+          evict_strb = 1 << cnt_d;
+          cnt_d = cnt_q + 2;
+        end
       end
     end
+
+    `FF(cnt_q, cnt_d, '0)
+
   end
 
   always_comb begin : flush
@@ -225,8 +250,6 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     end
     if (flush_valid_i) flush_strb = '1;
   end
-
-  `FF(cnt_q, cnt_d, '0)
 
   // -------------
   // Miss Handling
