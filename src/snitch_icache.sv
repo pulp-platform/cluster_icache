@@ -394,12 +394,13 @@ module snitch_icache #(
                                   ? 1'b0 : prefetch_lookup_req_ready;
 
     // prefetch arbiter - low priority
-    stream_arbiter #(
-      .DATA_T ( prefetch_req_t ),
-      .N_INP  ( NR_FETCH_PORTS )
+    multi_accept_rr_arb #(
+      .data_t ( prefetch_req_t ),
+      .NumInp ( NR_FETCH_PORTS )
     ) i_stream_arbiter_pre (
       .clk_i,
       .rst_ni,
+      .flush_i     ( '0 ),
       .inp_data_i  ( prefetch_req                  ),
       .inp_valid_i ( prefetch_req_valid & ~prefetch_req_priority ),
       .inp_ready_o ( prefetch_req_ready_pre        ),
@@ -409,12 +410,13 @@ module snitch_icache #(
     );
 
     // fetch arbiter - high priority
-    stream_arbiter #(
-      .DATA_T ( prefetch_req_t ),
-      .N_INP  ( NR_FETCH_PORTS )
+    multi_accept_rr_arb #(
+      .data_t ( prefetch_req_t ),
+      .NumInp ( NR_FETCH_PORTS )
     ) i_stream_arbiter_fetch (
       .clk_i,
       .rst_ni,
+      .flush_i     ( '0 ),
       .inp_data_i  ( prefetch_req                    ),
       .inp_valid_i ( prefetch_req_valid & prefetch_req_priority ),
       .inp_ready_o ( prefetch_req_ready_fetch        ),
@@ -427,12 +429,13 @@ module snitch_icache #(
 
   end else begin : gen_standard_fetch
 
-    stream_arbiter #(
-      .DATA_T ( prefetch_req_t ),
-      .N_INP  ( NR_FETCH_PORTS )
+    multi_accept_rr_arb #(
+      .data_t ( prefetch_req_t ),
+      .NumInp ( NR_FETCH_PORTS )
     ) i_stream_arbiter (
       .clk_i,
       .rst_ni,
+      .flush_i     ( '0 ),
       .inp_data_i  ( prefetch_req              ),
       .inp_valid_i ( prefetch_req_valid        ),
       .inp_ready_o ( prefetch_req_ready_tmp    ),
