@@ -345,6 +345,9 @@ module snitch_icache #(
     .dst_data_o  ( bypass_rsp_q       )
   );
 
+  logic [NR_FETCH_PORTS-1:0] prefetch_req_ready_tmp;
+  prefetch_req_t prefetch_lookup_req_tmp;
+
   /// Arbitrate cache port
   // 1. Request Side
   if (FETCH_PRIORITY) begin : gen_fetch_priority
@@ -353,28 +356,42 @@ module snitch_icache #(
     logic [NR_FETCH_PORTS-1:0] prefetch_req_ready_pre, prefetch_req_ready_fetch;
     prefetch_req_t             prefetch_lookup_req_pre, prefetch_lookup_req_fetch;
     logic                      prefetch_lookup_req_valid_pre, prefetch_lookup_req_valid_fetch;
-    logic                      prefetch_lookup_req_ready_pre, prefetch_lookup_req_ready_fetch;
     logic                      lock_pre_d, lock_pre_q;
+    logic                      prefetch_filtered_ready, fetch_filtered_ready;
 
 
     for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prio
       // prioritize fetches over prefetches
       assign prefetch_req_priority[i] = prefetch_req[i].id[2*i];
 
-      assign prefetch_req_ready[i] = prefetch_req_priority[i] ? prefetch_req_ready_fetch[i] :
-                                                                prefetch_req_ready_pre[i];
+      assign prefetch_req_ready_tmp[i] = prefetch_req_priority[i] ? prefetch_req_ready_fetch[i] :
+                                                                    prefetch_req_ready_pre[i];
     end
 
     assign prefetch_lookup_req_valid = prefetch_lookup_req_valid_pre |
                                        prefetch_lookup_req_valid_fetch;
-    assign prefetch_lookup_req = prefetch_lookup_req_valid_fetch && !lock_pre_q ?
-                                 prefetch_lookup_req_fetch :
-                                 prefetch_lookup_req_pre;
+    assign prefetch_lookup_req_tmp = prefetch_lookup_req_valid_fetch && !lock_pre_q ?
+                                     prefetch_lookup_req_fetch :
+                                     prefetch_lookup_req_pre;
 
     assign lock_pre_d = (lock_pre_q |
                          (~prefetch_lookup_req_valid_fetch &
                           prefetch_lookup_req_valid_pre     )) &
                         ~prefetch_lookup_req_ready;
+
+    // Suppress ready if fetch is valid and if the prefetcher is not locked
+    // If merge fetches, still give ready if addresses match
+    assign prefetch_filtered_ready = (prefetch_lookup_req_valid_fetch && !lock_pre_q) &&
+                                  !(MERGE_FETCHES &&
+                                    prefetch_lookup_req_pre.addr == prefetch_lookup_req_fetch.addr)
+                                  ? 1'b0 : prefetch_lookup_req_ready;
+
+    // Suppress ready if locked to prefetcher
+    // If merge fetches, still give ready if addresses match
+    assign fetch_filtered_ready = lock_pre_q &&
+                                  !(MERGE_FETCHES &&
+                                    prefetch_lookup_req_pre.addr == prefetch_lookup_req_fetch.addr)
+                                  ? 1'b0 : prefetch_lookup_req_ready;
 
     // prefetch arbiter - low priority
     stream_arbiter #(
@@ -388,8 +405,7 @@ module snitch_icache #(
       .inp_ready_o ( prefetch_req_ready_pre        ),
       .oup_data_o  ( prefetch_lookup_req_pre       ),
       .oup_valid_o ( prefetch_lookup_req_valid_pre ),
-      .oup_ready_i ( prefetch_lookup_req_valid_fetch && !lock_pre_q ?
-                     1'b0 : prefetch_lookup_req_ready )
+      .oup_ready_i ( prefetch_filtered_ready       )
     );
 
     // fetch arbiter - high priority
@@ -404,7 +420,7 @@ module snitch_icache #(
       .inp_ready_o ( prefetch_req_ready_fetch        ),
       .oup_data_o  ( prefetch_lookup_req_fetch       ),
       .oup_valid_o ( prefetch_lookup_req_valid_fetch ),
-      .oup_ready_i ( lock_pre_q ? 1'b0 : prefetch_lookup_req_ready )
+      .oup_ready_i ( fetch_filtered_ready            )
     );
 
     `FF(lock_pre_q, lock_pre_d, '0)
@@ -419,12 +435,26 @@ module snitch_icache #(
       .rst_ni,
       .inp_data_i  ( prefetch_req              ),
       .inp_valid_i ( prefetch_req_valid        ),
-      .inp_ready_o ( prefetch_req_ready        ),
-      .oup_data_o  ( prefetch_lookup_req       ),
+      .inp_ready_o ( prefetch_req_ready_tmp    ),
+      .oup_data_o  ( prefetch_lookup_req_tmp   ),
       .oup_valid_o ( prefetch_lookup_req_valid ),
       .oup_ready_i ( prefetch_lookup_req_ready )
     );
 
+  end
+
+  for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prefetch_req_ready
+    assign prefetch_req_ready[i] = prefetch_req_ready_tmp[i] |
+                                   (prefetch_lookup_req_ready &
+                                    prefetch_req[i].addr == prefetch_lookup_req.addr);
+  end
+
+  always_comb begin
+    prefetch_lookup_req = prefetch_lookup_req_tmp;
+    for (int i = 0; i < NR_FETCH_PORTS; i++) begin
+      prefetch_lookup_req.id |= prefetch_req_ready[i] && prefetch_req_valid[i] ?
+                                prefetch_req[i].id : '0;
+    end
   end
 
   // 2. Response Side
