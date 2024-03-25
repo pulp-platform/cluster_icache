@@ -40,8 +40,7 @@ package snitch_icache_pkg;
     int unsigned TAG_WIDTH;
     int unsigned L0_TAG_WIDTH;
     int unsigned L0_EARLY_TAG_WIDTH;
-    int unsigned ID_WIDTH_REQ;
-    int unsigned ID_WIDTH_RESP;
+    int unsigned ID_WIDTH;
     int unsigned PENDING_IW; // refill ID width
   } config_t;
 

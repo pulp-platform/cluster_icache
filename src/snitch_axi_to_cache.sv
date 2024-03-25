@@ -21,22 +21,22 @@ module snitch_axi_to_cache #(
   parameter type         resp_t             = logic,
   parameter snitch_icache_pkg::config_t CFG = '0
 )(
-  input  logic                         clk_i,
-  input  logic                         rst_ni,
+  input  logic                      clk_i,
+  input  logic                      rst_ni,
   // Cache request
-  output logic [CFG.FETCH_AW-1:0]      req_addr_o,
-  output logic [CFG.ID_WIDTH_REQ-1:0]  req_id_o,
-  output logic                         req_valid_o,
-  input  logic                         req_ready_i,
+  output logic [CFG.FETCH_AW-1:0]   req_addr_o,
+  output logic [CFG.ID_WIDTH-1:0]   req_id_o,
+  output logic                      req_valid_o,
+  input  logic                      req_ready_i,
   // Cache response
-  input  logic [CFG.LINE_WIDTH-1:0]    rsp_data_i,
-  input  logic                         rsp_error_i,
-  input  logic [CFG.ID_WIDTH_RESP-1:0] rsp_id_i,
-  input  logic                         rsp_valid_i,
-  output logic                         rsp_ready_o,
+  input  logic [CFG.LINE_WIDTH-1:0] rsp_data_i,
+  input  logic                      rsp_error_i,
+  input  logic [CFG.ID_WIDTH-1:0]   rsp_id_i,
+  input  logic                      rsp_valid_i,
+  output logic                      rsp_ready_o,
   // AXI
-  input  req_t                         slv_req_i,
-  output resp_t                        slv_rsp_o
+  input  req_t                      slv_req_i,
+  output resp_t                     slv_rsp_o
 );
 
   import cf_math_pkg::idx_width;
@@ -44,13 +44,13 @@ module snitch_axi_to_cache #(
   // AXI-word offset within cache line
   localparam int unsigned WordOffset = idx_width(CFG.LINE_WIDTH/CFG.FETCH_DW);
 
-  typedef logic [WordOffset-1:0]       offset_t;
-  typedef logic [CFG.ID_WIDTH_REQ-1:0] id_t;
+  typedef logic [WordOffset-1:0]   offset_t;
+  typedef logic [$clog2(CFG.ID_WIDTH)-1:0] id_t;
   typedef struct packed {
-    logic [CFG.FETCH_AW-1:0]     addr;
-    logic [CFG.ID_WIDTH_REQ-1:0] id;
-    axi_pkg::len_t               len;
-    axi_pkg::burst_t             burst;
+    logic [CFG.FETCH_AW-1:0] addr;
+    logic [CFG.ID_WIDTH-1:0] id;
+    axi_pkg::len_t           len;
+    axi_pkg::burst_t         burst;
   } chan_t;
 
   // AR Channel
@@ -91,9 +91,9 @@ module snitch_axi_to_cache #(
 
   // Store counters
   axi_burst_splitter_table #(
-    .MaxTrans ( MaxTrans         ),
-    .IdWidth  ( CFG.ID_WIDTH_REQ ),
-    .offset_t ( offset_t         )
+    .MaxTrans ( MaxTrans             ),
+    .IdWidth  ( $clog2(CFG.ID_WIDTH) ),
+    .offset_t ( offset_t             )
   ) i_axi_burst_splitter_table (
     .clk_i,
     .rst_ni,
@@ -114,7 +114,7 @@ module snitch_axi_to_cache #(
   );
 
   assign req_addr_o = ax_o.addr;
-  assign req_id_o = ax_o.id;
+  assign req_id_o = 'b1 << ax_o.id;
 
   typedef enum logic {Idle, Busy} ar_state_e;
   ar_state_e ar_state_d, ar_state_q;
@@ -192,9 +192,9 @@ module snitch_axi_to_cache #(
   // --------------------------------------------------
   // Cut path
   typedef struct packed {
-    logic [CFG.LINE_WIDTH-1:0]    data;
-    logic                         error;
-    logic [CFG.ID_WIDTH_RESP-1:0] id;
+    logic [CFG.LINE_WIDTH-1:0] data;
+    logic                      error;
+    logic [CFG.ID_WIDTH-1:0]   id;
   } rsp_in_t;
 
   logic rsp_valid_q, rsp_ready_q;
@@ -226,15 +226,15 @@ module snitch_axi_to_cache #(
   // rsp_error_i --> [forward]                                             --> rsp_in_q.error
   logic rsp_valid, rsp_ready;
   logic rsp_id_onehot, rsp_id_empty;
-  logic [CFG.ID_WIDTH_RESP-1:0] rsp_id_mask, rsp_id_masked;
+  logic [CFG.ID_WIDTH-1:0] rsp_id_mask, rsp_id_masked;
 
   assign rsp_ready_q   = (rsp_id_onehot | rsp_id_empty) & rsp_ready;
   assign rsp_valid     = rsp_valid_q; // And not empty?
   assign rsp_id_masked = rsp_in_q.id & ~rsp_id_mask;
 
   lzc #(
-    .WIDTH ( CFG.ID_WIDTH_RESP ),
-    .MODE  ( 0                 )
+    .WIDTH ( CFG.ID_WIDTH ),
+    .MODE  ( 0            )
   ) i_lzc (
     .in_i    ( rsp_id_masked ),
     .cnt_o   ( rsp_id        ),
@@ -242,7 +242,7 @@ module snitch_axi_to_cache #(
   );
 
   cc_onehot #(
-    .Width ( CFG.ID_WIDTH_RESP )
+    .Width ( CFG.ID_WIDTH )
   ) i_onehot (
     .d_i         ( rsp_id_masked ),
     .is_onehot_o ( rsp_id_onehot )

@@ -211,50 +211,49 @@ module snitch_read_only_cache #(
     COUNT_ALIGN:   cf_math_pkg::idx_width(LineCount),
     SET_ALIGN:     cf_math_pkg::idx_width(SetCount),
     TAG_WIDTH:     AxiAddrWidth - $clog2(LineWidth/8) - $clog2(LineCount) + 1,
-    ID_WIDTH_REQ:  AxiIdWidth,
-    ID_WIDTH_RESP: 2**AxiIdWidth,
+    ID_WIDTH:      2**AxiIdWidth,
     PENDING_IW:    $clog2(PendingCount),
     default:       0
   };
 
-  logic [CFG.FETCH_AW-1:0]      in_addr;
-  logic [CFG.ID_WIDTH_REQ-1:0]  in_id;
-  logic                         in_valid;
-  logic                         in_ready;
+  logic [CFG.FETCH_AW-1:0]    in_addr;
+  logic [CFG.ID_WIDTH-1:0]    in_id;
+  logic                       in_valid;
+  logic                       in_ready;
 
-  logic [CFG.LINE_WIDTH-1:0]    in_rsp_data;
-  logic                         in_rsp_error;
-  logic [CFG.ID_WIDTH_RESP-1:0] in_rsp_id;
-  logic                         in_rsp_valid;
-  logic                         in_rsp_ready;
+  logic [CFG.LINE_WIDTH-1:0]  in_rsp_data;
+  logic                       in_rsp_error;
+  logic [CFG.ID_WIDTH-1:0]    in_rsp_id;
+  logic                       in_rsp_valid;
+  logic                       in_rsp_ready;
 
-  logic [CFG.FETCH_AW-1:0]      lookup_addr;
-  logic [CFG.ID_WIDTH_REQ-1:0]  lookup_id;
-  logic [CFG.SET_ALIGN-1:0]     lookup_set;
-  logic                         lookup_hit;
-  logic [CFG.LINE_WIDTH-1:0]    lookup_data;
-  logic                         lookup_error;
-  logic                         lookup_valid;
-  logic                         lookup_ready;
+  logic [CFG.FETCH_AW-1:0]    lookup_addr;
+  logic [CFG.ID_WIDTH-1:0]    lookup_id;
+  logic [CFG.SET_ALIGN-1:0]   lookup_set;
+  logic                       lookup_hit;
+  logic [CFG.LINE_WIDTH-1:0]  lookup_data;
+  logic                       lookup_error;
+  logic                       lookup_valid;
+  logic                       lookup_ready;
 
-  logic                         handler_req_valid;
-  logic                         handler_req_ready;
-  logic [CFG.FETCH_AW-1:0]      handler_req_addr;
-  logic [CFG.PENDING_IW-1:0]    handler_req_id;
+  logic                       handler_req_valid;
+  logic                       handler_req_ready;
+  logic [CFG.FETCH_AW-1:0]    handler_req_addr;
+  logic [CFG.PENDING_IW-1:0]  handler_req_id;
 
-  logic [CFG.LINE_WIDTH-1:0]    handler_rsp_data;
-  logic                         handler_rsp_error;
-  logic [CFG.PENDING_IW-1:0]    handler_rsp_id;
-  logic                         handler_rsp_valid;
-  logic                         handler_rsp_ready;
+  logic [CFG.LINE_WIDTH-1:0]  handler_rsp_data;
+  logic                       handler_rsp_error;
+  logic [CFG.PENDING_IW-1:0]  handler_rsp_id;
+  logic                       handler_rsp_valid;
+  logic                       handler_rsp_ready;
 
-  logic [CFG.COUNT_ALIGN-1:0]   write_addr;
-  logic [CFG.SET_ALIGN-1:0]     write_set;
-  logic [CFG.LINE_WIDTH-1:0]    write_data;
-  logic [CFG.TAG_WIDTH-1:0]     write_tag;
-  logic                         write_error;
-  logic                         write_valid;
-  logic                         write_ready;
+  logic [CFG.COUNT_ALIGN-1:0] write_addr;
+  logic [CFG.SET_ALIGN-1:0]   write_set;
+  logic [CFG.LINE_WIDTH-1:0]  write_data;
+  logic [CFG.TAG_WIDTH-1:0]   write_tag;
+  logic                       write_error;
+  logic                       write_valid;
+  logic                       write_ready;
 
   // The axi_to_cache module converts AXI requests to cache requests and
   // reconstructs AXI responses from the cache's responses
