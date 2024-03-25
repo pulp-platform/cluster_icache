@@ -202,6 +202,7 @@ module pulp_icache_wrap #(
     .FILL_AW            ( AxiAddrWidth    ),
     .FILL_DW            ( AxiDataWidth    ),
     .FETCH_PRIORITY     ( 1               ),
+    .MERGE_FETCHES      ( 1               ),
     .L1_TAG_SCM         ( 1               ),
     .SERIAL_LOOKUP      ( 1               ),
     .NUM_AXI_OUTSTANDING( 4               ),
