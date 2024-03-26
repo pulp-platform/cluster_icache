@@ -127,7 +127,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
     assert(FETCH_DW > 0);
     assert(FILL_AW > 0);
     assert(FILL_DW > 0);
-    assert(CFG.L0_EARLY_TAG_WIDTH < CFG.L0_TAG_WIDTH);
+    assert(CFG.L0_EARLY_TAG_WIDTH <= CFG.L0_TAG_WIDTH);
     assert(FETCH_AW == FILL_AW);
     assert(2**$clog2(LINE_WIDTH) == LINE_WIDTH)
       else $fatal(1, "Cache LINE_WIDTH %0d is not a power of two", LINE_WIDTH);
