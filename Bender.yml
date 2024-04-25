@@ -16,6 +16,7 @@ dependencies:
   tech_cells_generic: { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.11 }
   axi:                { git: "https://github.com/pulp-platform/axi.git",                version: 0.39.1 }
   scm:                { git: "https://github.com/pulp-platform/scm.git",                version: 1.1.0 }
+  register_interface: { git: "https://github.com/pulp-platform/register_interface.git", version: 0.4.4 }
 
 sources:
   # Source files grouped in levels. Files in level 0 have no dependencies on files in this
@@ -37,9 +38,12 @@ sources:
   # Level 3
   - src/snitch_icache.sv
   - src/snitch_read_only_cache.sv
-  - target: pulp
-    files:
-      - src/pulp_icache_wrap.sv
+  # Level 4
+  - src/pulp_icache_wrap.sv
+  - files: # ctrl_unit
+    - src/ctrl_unit/cluster_icache_ctrl_reg_pkg.sv
+    - src/ctrl_unit/cluster_icache_ctrl_reg_top.sv
+    - src/ctrl_unit/cluster_icache_ctrl_unit.sv
   - target: test
     files:
       - test/snitch_icache_l0_tb.sv
