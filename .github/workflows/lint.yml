@@ -23,6 +23,9 @@ jobs:
           paths: |
             ./src
             ./test
+          exclude_paths: |
+            ./src/ctrl_unit/cluster_icache_ctrl_reg_top.sv
+            ./src/ctrl_unit/cluster_icache_ctrl_reg_pkg.sv
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fail_on_error: true
           reviewdog_reporter: github-check
