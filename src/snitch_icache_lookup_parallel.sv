@@ -260,6 +260,8 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
     icache_events_o.l1_hit = valid_q & data_d.hit;
     icache_events_o.l1_stall = in_valid_i & ~in_ready_o;
     icache_events_o.l1_handler_stall = out_valid_o & ~out_ready_i;
+    icache_events_o.l1_tag_parity_error = '0;
+    icache_events_o.l1_data_parity_error = '0;
   end
 
   // Assertions

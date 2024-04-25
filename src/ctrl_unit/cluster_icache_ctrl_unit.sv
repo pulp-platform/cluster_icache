@@ -26,9 +26,9 @@ module cluster_icache_ctrl_unit import snitch_icache_pkg::*; #(
   import cluster_icache_ctrl_reg_pkg::*;
 
   initial begin
-    assert(5 == $bits(icache_l0_events_t));
-    assert(4 == $bits(icache_l1_events_t));
-    assert(NumAvailableCounters >= 4 + NR_FETCH_PORTS*5);
+    assert(NumL0Events == $bits(icache_l0_events_t));
+    assert(NumL1Events == $bits(icache_l1_events_t));
+    assert(NumAvailableCounters >= NumL1Events + NR_FETCH_PORTS*NumL0Events);
     assert(NR_FETCH_PORTS <= NumCores);
   end
 
@@ -64,13 +64,20 @@ module cluster_icache_ctrl_unit import snitch_icache_pkg::*; #(
     counters_reg[1].de = reg2hw.enable_counters.q & l1_events_i.l1_hit;
     counters_reg[2].de = reg2hw.enable_counters.q & l1_events_i.l1_stall;
     counters_reg[3].de = reg2hw.enable_counters.q & l1_events_i.l1_handler_stall;
+    counters_reg[5].de = reg2hw.enable_counters.q & l1_events_i.l1_tag_parity_error;
+    counters_reg[6].de = reg2hw.enable_counters.q & l1_events_i.l1_data_parity_error;
 
     for (int unsigned i = 0; i < NR_FETCH_PORTS; i++) begin
-      counters_reg[4 + i*5 + 0].de = reg2hw.enable_counters.q & l0_events_i[i].l0_miss;
-      counters_reg[4 + i*5 + 1].de = reg2hw.enable_counters.q & l0_events_i[i].l0_hit;
-      counters_reg[4 + i*5 + 2].de = reg2hw.enable_counters.q & l0_events_i[i].l0_prefetch;
-      counters_reg[4 + i*5 + 3].de = reg2hw.enable_counters.q & l0_events_i[i].l0_double_hit;
-      counters_reg[4 + i*5 + 4].de = reg2hw.enable_counters.q & l0_events_i[i].l0_stall;
+      counters_reg[NumL1Events + i*NumL0Events + 0].de = reg2hw.enable_counters.q &
+                                                         l0_events_i[i].l0_miss;
+      counters_reg[NumL1Events + i*NumL0Events + 1].de = reg2hw.enable_counters.q &
+                                                         l0_events_i[i].l0_hit;
+      counters_reg[NumL1Events + i*NumL0Events + 2].de = reg2hw.enable_counters.q &
+                                                         l0_events_i[i].l0_prefetch;
+      counters_reg[NumL1Events + i*NumL0Events + 3].de = reg2hw.enable_counters.q &
+                                                         l0_events_i[i].l0_double_hit;
+      counters_reg[NumL1Events + i*NumL0Events + 4].de = reg2hw.enable_counters.q &
+                                                         l0_events_i[i].l0_stall;
     end
 
     // Clear on global clear signal

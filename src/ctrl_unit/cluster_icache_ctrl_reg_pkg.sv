@@ -8,7 +8,9 @@ package cluster_icache_ctrl_reg_pkg;
 
   // Param list
   parameter int NumCores = 8;
-  parameter int NumAvailableCounters = 44;
+  parameter int NumL0Events = 5;
+  parameter int NumL1Events = 6;
+  parameter int NumAvailableCounters = 46;
 
   // Address widths within the block
   parameter int BlockAw = 8;
@@ -76,23 +78,23 @@ package cluster_icache_ctrl_reg_pkg;
 
   // Register -> HW type
   typedef struct packed {
-    cluster_icache_ctrl_reg2hw_enable_reg_t enable; // [1425:1425]
-    cluster_icache_ctrl_reg2hw_flush_reg_t flush; // [1424:1423]
-    cluster_icache_ctrl_reg2hw_flush_l1_only_reg_t flush_l1_only; // [1422:1421]
-    cluster_icache_ctrl_reg2hw_sel_flush_icache_reg_t sel_flush_icache; // [1420:1412]
-    cluster_icache_ctrl_reg2hw_clear_counters_reg_t clear_counters; // [1411:1410]
-    cluster_icache_ctrl_reg2hw_enable_counters_reg_t enable_counters; // [1409:1409]
-    cluster_icache_ctrl_reg2hw_enable_prefetch_reg_t enable_prefetch; // [1408:1408]
-    cluster_icache_ctrl_reg2hw_counters_mreg_t [43:0] counters; // [1407:0]
+    cluster_icache_ctrl_reg2hw_enable_reg_t enable; // [1489:1489]
+    cluster_icache_ctrl_reg2hw_flush_reg_t flush; // [1488:1487]
+    cluster_icache_ctrl_reg2hw_flush_l1_only_reg_t flush_l1_only; // [1486:1485]
+    cluster_icache_ctrl_reg2hw_sel_flush_icache_reg_t sel_flush_icache; // [1484:1476]
+    cluster_icache_ctrl_reg2hw_clear_counters_reg_t clear_counters; // [1475:1474]
+    cluster_icache_ctrl_reg2hw_enable_counters_reg_t enable_counters; // [1473:1473]
+    cluster_icache_ctrl_reg2hw_enable_prefetch_reg_t enable_prefetch; // [1472:1472]
+    cluster_icache_ctrl_reg2hw_counters_mreg_t [45:0] counters; // [1471:0]
   } cluster_icache_ctrl_reg2hw_t;
 
   // HW -> register type
   typedef struct packed {
-    cluster_icache_ctrl_hw2reg_flush_reg_t flush; // [1462:1462]
-    cluster_icache_ctrl_hw2reg_flush_l1_only_reg_t flush_l1_only; // [1461:1461]
-    cluster_icache_ctrl_hw2reg_sel_flush_icache_reg_t sel_flush_icache; // [1460:1453]
-    cluster_icache_ctrl_hw2reg_clear_counters_reg_t clear_counters; // [1452:1452]
-    cluster_icache_ctrl_hw2reg_counters_mreg_t [43:0] counters; // [1451:0]
+    cluster_icache_ctrl_hw2reg_flush_reg_t flush; // [1528:1528]
+    cluster_icache_ctrl_hw2reg_flush_l1_only_reg_t flush_l1_only; // [1527:1527]
+    cluster_icache_ctrl_hw2reg_sel_flush_icache_reg_t sel_flush_icache; // [1526:1519]
+    cluster_icache_ctrl_hw2reg_clear_counters_reg_t clear_counters; // [1518:1518]
+    cluster_icache_ctrl_hw2reg_counters_mreg_t [45:0] counters; // [1517:0]
   } cluster_icache_ctrl_hw2reg_t;
 
   // Register offsets
@@ -147,6 +149,8 @@ package cluster_icache_ctrl_reg_pkg;
   parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_41_OFFSET = 8'h c4;
   parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_42_OFFSET = 8'h c8;
   parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_43_OFFSET = 8'h cc;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_44_OFFSET = 8'h d0;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_45_OFFSET = 8'h d4;
 
   // Reset values for hwext registers and their fields
   parameter logic [0:0] CLUSTER_ICACHE_CTRL_FLUSH_RESVAL = 1'h 0;
@@ -210,11 +214,13 @@ package cluster_icache_ctrl_reg_pkg;
     CLUSTER_ICACHE_CTRL_COUNTERS_40,
     CLUSTER_ICACHE_CTRL_COUNTERS_41,
     CLUSTER_ICACHE_CTRL_COUNTERS_42,
-    CLUSTER_ICACHE_CTRL_COUNTERS_43
+    CLUSTER_ICACHE_CTRL_COUNTERS_43,
+    CLUSTER_ICACHE_CTRL_COUNTERS_44,
+    CLUSTER_ICACHE_CTRL_COUNTERS_45
   } cluster_icache_ctrl_id_e;
 
   // Register width information to check illegal writes
-  parameter logic [3:0] CLUSTER_ICACHE_CTRL_PERMIT [51] = '{
+  parameter logic [3:0] CLUSTER_ICACHE_CTRL_PERMIT [53] = '{
     4'b 0001, // index[ 0] CLUSTER_ICACHE_CTRL_ENABLE
     4'b 0001, // index[ 1] CLUSTER_ICACHE_CTRL_FLUSH
     4'b 0001, // index[ 2] CLUSTER_ICACHE_CTRL_FLUSH_L1_ONLY
@@ -265,7 +271,9 @@ package cluster_icache_ctrl_reg_pkg;
     4'b 1111, // index[47] CLUSTER_ICACHE_CTRL_COUNTERS_40
     4'b 1111, // index[48] CLUSTER_ICACHE_CTRL_COUNTERS_41
     4'b 1111, // index[49] CLUSTER_ICACHE_CTRL_COUNTERS_42
-    4'b 1111  // index[50] CLUSTER_ICACHE_CTRL_COUNTERS_43
+    4'b 1111, // index[50] CLUSTER_ICACHE_CTRL_COUNTERS_43
+    4'b 1111, // index[51] CLUSTER_ICACHE_CTRL_COUNTERS_44
+    4'b 1111  // index[52] CLUSTER_ICACHE_CTRL_COUNTERS_45
   };
 
 endpackage

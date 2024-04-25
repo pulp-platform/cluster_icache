@@ -225,6 +225,12 @@ module cluster_icache_ctrl_reg_top #(
   logic [31:0] counters_43_qs;
   logic [31:0] counters_43_wd;
   logic counters_43_we;
+  logic [31:0] counters_44_qs;
+  logic [31:0] counters_44_wd;
+  logic counters_44_we;
+  logic [31:0] counters_45_qs;
+  logic [31:0] counters_45_wd;
+  logic counters_45_we;
 
   // Register instances
   // R[enable]: V(False)
@@ -1561,10 +1567,64 @@ module cluster_icache_ctrl_reg_top #(
     .qs     (counters_43_qs)
   );
 
+  // Subregister 44 of Multireg counters
+  // R[counters_44]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_44 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_44_we),
+    .wd     (counters_44_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[44].de),
+    .d      (hw2reg.counters[44].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[44].q ),
+
+    // to register interface (read)
+    .qs     (counters_44_qs)
+  );
+
+  // Subregister 45 of Multireg counters
+  // R[counters_45]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_45 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_45_we),
+    .wd     (counters_45_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[45].de),
+    .d      (hw2reg.counters[45].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[45].q ),
+
+    // to register interface (read)
+    .qs     (counters_45_qs)
+  );
 
 
 
-  logic [50:0] addr_hit;
+
+  logic [52:0] addr_hit;
   always_comb begin
     addr_hit = '0;
     addr_hit[ 0] = (reg_addr == CLUSTER_ICACHE_CTRL_ENABLE_OFFSET);
@@ -1618,6 +1678,8 @@ module cluster_icache_ctrl_reg_top #(
     addr_hit[48] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_41_OFFSET);
     addr_hit[49] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_42_OFFSET);
     addr_hit[50] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_43_OFFSET);
+    addr_hit[51] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_44_OFFSET);
+    addr_hit[52] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_45_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -1675,7 +1737,9 @@ module cluster_icache_ctrl_reg_top #(
                (addr_hit[47] & (|(CLUSTER_ICACHE_CTRL_PERMIT[47] & ~reg_be))) |
                (addr_hit[48] & (|(CLUSTER_ICACHE_CTRL_PERMIT[48] & ~reg_be))) |
                (addr_hit[49] & (|(CLUSTER_ICACHE_CTRL_PERMIT[49] & ~reg_be))) |
-               (addr_hit[50] & (|(CLUSTER_ICACHE_CTRL_PERMIT[50] & ~reg_be)))));
+               (addr_hit[50] & (|(CLUSTER_ICACHE_CTRL_PERMIT[50] & ~reg_be))) |
+               (addr_hit[51] & (|(CLUSTER_ICACHE_CTRL_PERMIT[51] & ~reg_be))) |
+               (addr_hit[52] & (|(CLUSTER_ICACHE_CTRL_PERMIT[52] & ~reg_be)))));
   end
 
   assign enable_we = addr_hit[0] & reg_we & !reg_error;
@@ -1834,6 +1898,12 @@ module cluster_icache_ctrl_reg_top #(
 
   assign counters_43_we = addr_hit[50] & reg_we & !reg_error;
   assign counters_43_wd = reg_wdata[31:0];
+
+  assign counters_44_we = addr_hit[51] & reg_we & !reg_error;
+  assign counters_44_wd = reg_wdata[31:0];
+
+  assign counters_45_we = addr_hit[52] & reg_we & !reg_error;
+  assign counters_45_wd = reg_wdata[31:0];
 
   // Read data return
   always_comb begin
@@ -2041,6 +2111,14 @@ module cluster_icache_ctrl_reg_top #(
 
       addr_hit[50]: begin
         reg_rdata_next[31:0] = counters_43_qs;
+      end
+
+      addr_hit[51]: begin
+        reg_rdata_next[31:0] = counters_44_qs;
+      end
+
+      addr_hit[52]: begin
+        reg_rdata_next[31:0] = counters_45_qs;
       end
 
       default: begin

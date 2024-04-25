@@ -463,6 +463,8 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     icache_events_o.l1_hit = req_handshake & tag_rsp_s.hit;
     icache_events_o.l1_stall = in_valid_i & ~in_ready_o;
     icache_events_o.l1_handler_stall = out_valid_o & ~out_ready_i;
+    icache_events_o.l1_tag_parity_error = req_handshake & faulty_hit_d;
+    icache_events_o.l1_data_parity_error = tag_handshake & data_parity_inv_d.parity_error;
   end
 
 endmodule
