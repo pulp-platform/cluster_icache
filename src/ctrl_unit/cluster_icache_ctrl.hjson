@@ -17,6 +17,14 @@
       desc: "Number of cores",
       default: "8"
     },
+    { name: "NumL0Events",
+      desc: "Number of L0 events",
+      default: "5"
+    },
+    { name: "NumL1Events",
+      desc: "Number of L1 events",
+      default: "4"
+    },
     { name: "NumAvailableCounters",
       desc: "Number of available counters",
       default: "44" // NumL1Events + NumCores * NumL0Events
