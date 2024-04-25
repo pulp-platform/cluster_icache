@@ -8,6 +8,8 @@ package cluster_icache_ctrl_reg_pkg;
 
   // Param list
   parameter int NumCores = 8;
+  parameter int NumL0Events = 5;
+  parameter int NumL1Events = 4;
   parameter int NumAvailableCounters = 44;
 
   // Address widths within the block
