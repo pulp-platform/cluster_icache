@@ -19,11 +19,12 @@ compile.tcl: .bender
 	$(BENDER) script vsim -t test \
     --vlog-arg="$(VLOG_FLAGS)" \
     > compile.tcl
+	echo "return 0" >> compile.tcl
 
 .PHONY: build test_l0 test_ro test_l0_nogui test_ro_nogui
 
 build: compile.tcl
-	$(VSIM) -c -do 'source compile.tcl; quit'
+	$(VSIM) -c -do 'quit -code [source compile.tcl]'
 
 test_l0: build
 	$(VSIM) snitch_icache_l0_tb -coverage -voptargs='+acc +cover=sbecft' -do "log -r /*; run -all"
