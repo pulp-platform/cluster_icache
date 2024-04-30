@@ -105,8 +105,7 @@ module snitch_icache_l0_tb #(
       PENDING_IW:  $clog2(2)
   };
 
-  localparam int unsigned IdWidthReq = $clog2(NR_FETCH_PORTS) + 1;
-  localparam int unsigned IdWidthResp = 2*NR_FETCH_PORTS;
+  localparam int unsigned IdWidth = 2*NR_FETCH_PORTS;
 
   logic  clk, rst;
   logic  dut_flush_valid;
@@ -119,12 +118,12 @@ module snitch_icache_l0_tb #(
   typedef struct packed {
     logic [LINE_WIDTH-1:0] data;
     logic error;
-    logic [IdWidthResp-1:0] id;
+    logic [IdWidth-1:0] id;
   } dut_in_t;
 
   typedef struct packed {
     addr_t addr;
-    logic [IdWidthReq-1:0] id;
+    logic [IdWidth-1:0] id;
   } dut_out_t;
 
   typedef stream_test::stream_driver #(
@@ -283,13 +282,27 @@ module snitch_icache_l0_tb #(
   `ASSERT(RequestProgress, dut_valid |-> ##[0:RequestTimeout] dut_ready, clk, rst)
 
   // Response Drivers
-  mailbox #(dut_out_t) addr_mbx [2];
+  mailbox #(dut_out_t) addr_mbx [IdWidth];
   semaphore response_lock = new (1);
+
+  function automatic logic [$clog2(IdWidth)-1:0] onehot2bin (input logic [IdWidth-1:0] onehot);
+    logic [$clog2(IdWidth)-1:0] bin;
+    for (int i = 0; i < IdWidth; i++) begin
+      logic [IdWidth-1:0] tmp_mask;
+      for (int j = 0; j < IdWidth; j++) begin
+        logic [IdWidth-1:0] tmp_i;
+        tmp_i = j;
+        tmp_mask[j] = tmp_i[i];
+      end
+      bin[i] = |(tmp_mask & onehot);
+    end
+    return bin;
+  endfunction
 
   initial begin
     automatic int unsigned stall_cycles;
-    automatic dut_out_t dut_out;
-    for (int i = 0; i < 2**IdWidthReq; i++)
+    automatic dut_out_t dut_out_loc;
+    for (int i = 0; i < IdWidth; i++)
       addr_mbx [i] = new();
     out_driver.reset_out();
     @(negedge rst);
@@ -297,8 +310,8 @@ module snitch_icache_l0_tb #(
     forever begin
       stall_cycles = $urandom_range(0, 5);
       repeat (stall_cycles) @(posedge clk);
-      out_driver.recv(dut_out);
-      addr_mbx[dut_out.id].put(dut_out);
+      out_driver.recv(dut_out_loc);
+      addr_mbx[onehot2bin(dut_out_loc.id)].put(dut_out_loc);
       // $info("Requesting from Address: %h, ID: %d", dut_out.addr, dut_out.id);
     end
   end

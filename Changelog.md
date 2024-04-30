@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Fixed
 - lookup_serial: Make `write_ready_o` independent of `write_valid_i`.
+- Fix L0 testbench.
 
 ### Changed
 - Rename `SET_COUNT` to `WAY_COUNT` to correct terminology, as it reflects the number of ways in a set.
