@@ -44,6 +44,10 @@ sources:
     - src/ctrl_unit/cluster_icache_ctrl_reg_pkg.sv
     - src/ctrl_unit/cluster_icache_ctrl_reg_top.sv
     - src/ctrl_unit/cluster_icache_ctrl_unit.sv
+  - files: # ctrl_unit
+    - src/ctrl_unit/cluster_icache_ctrl_perfctr_reg_pkg.sv
+    - src/ctrl_unit/cluster_icache_ctrl_perfctr_reg_top.sv
+    - src/ctrl_unit/cluster_icache_ctrl_perfctr_unit.sv
   - target: test
     files:
       - test/snitch_icache_l0_tb.sv
