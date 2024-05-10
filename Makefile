@@ -11,6 +11,7 @@ VLOG_FLAGS += +cover=sbecft
 
 CTRL_UNIT_DIR = src/ctrl_unit
 CTRL_UNIT = $(CTRL_UNIT_DIR)/cluster_icache_ctrl
+CTRL_UNIT_PERF = $(CTRL_UNIT_DIR)/cluster_icache_ctrl_perfctr
 
 Bender.lock:
 	$(BENDER) update
@@ -19,10 +20,13 @@ Bender.lock:
 	$(BENDER) checkout
 
 .PHONY: gen_hw
-gen_hw: .bender $(CTRL_UNIT)_reg_top.sv
+gen_hw: .bender $(CTRL_UNIT)_reg_top.sv $(CTRL_UNIT_PERF)_reg_top.sv
 
 $(CTRL_UNIT)_reg_top.sv: .bender $(CTRL_UNIT).hjson
 	python $(shell $(BENDER) path register_interface)/vendor/lowrisc_opentitan/util/regtool.py $(CTRL_UNIT).hjson -t $(CTRL_UNIT_DIR) -r
+
+$(CTRL_UNIT_PERF)_reg_top.sv: .bender $(CTRL_UNIT_PERF).hjson
+	python $(shell $(BENDER) path register_interface)/vendor/lowrisc_opentitan/util/regtool.py $(CTRL_UNIT_PERF).hjson -t $(CTRL_UNIT_DIR) -r
 
 compile.tcl: .bender Bender.yml Bender.lock
 	$(BENDER) script vsim -t test \
