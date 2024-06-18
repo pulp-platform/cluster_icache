@@ -199,6 +199,9 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
         .DATA_WIDTH (CFG.TAG_WIDTH+2+TagParity)
       ) i_tag (
         .clk         ( clk_i                       ),
+      `ifdef TARGET_SCM_USE_FPGA_SCM
+        .rst_n       ( rst_ni                      ),
+      `endif
         .ReadEnable  ( tag_enable[i] && !tag_write ),
         .ReadAddr    ( tag_addr                    ),
         .ReadData    ( tag_rdata[i]                ),
