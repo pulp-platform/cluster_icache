@@ -17,27 +17,27 @@ module snitch_icache_lookup_parallel #(
   input  logic flush_valid_i,
   output logic flush_ready_o,
 
-  input  logic [CFG.FETCH_AW-1:0]     in_addr_i,
-  input  logic [CFG.ID_WIDTH_REQ-1:0] in_id_i,
-  input  logic                        in_valid_i,
-  output logic                        in_ready_o,
+  input  logic [CFG.FETCH_AW-1:0]    in_addr_i,
+  input  logic [CFG.ID_WIDTH-1:0]    in_id_i,
+  input  logic                       in_valid_i,
+  output logic                       in_ready_o,
 
-  output logic [CFG.FETCH_AW-1:0]     out_addr_o,
-  output logic [CFG.ID_WIDTH_REQ-1:0] out_id_o,
-  output logic [CFG.SET_ALIGN-1:0]    out_set_o,
-  output logic                        out_hit_o,
-  output logic [CFG.LINE_WIDTH-1:0]   out_data_o,
-  output logic                        out_error_o,
-  output logic                        out_valid_o,
-  input  logic                        out_ready_i,
+  output logic [CFG.FETCH_AW-1:0]    out_addr_o,
+  output logic [CFG.ID_WIDTH-1:0]    out_id_o,
+  output logic [CFG.SET_ALIGN-1:0]   out_set_o,
+  output logic                       out_hit_o,
+  output logic [CFG.LINE_WIDTH-1:0]  out_data_o,
+  output logic                       out_error_o,
+  output logic                       out_valid_o,
+  input  logic                       out_ready_i,
 
-  input  logic [CFG.COUNT_ALIGN-1:0]  write_addr_i,
-  input  logic [CFG.SET_ALIGN-1:0]    write_set_i,
-  input  logic [CFG.LINE_WIDTH-1:0]   write_data_i,
-  input  logic [CFG.TAG_WIDTH-1:0]    write_tag_i,
-  input  logic                        write_error_i,
-  input  logic                        write_valid_i,
-  output logic                        write_ready_o,
+  input  logic [CFG.COUNT_ALIGN-1:0] write_addr_i,
+  input  logic [CFG.SET_ALIGN-1:0]   write_set_i,
+  input  logic [CFG.LINE_WIDTH-1:0]  write_data_i,
+  input  logic [CFG.TAG_WIDTH-1:0]   write_tag_i,
+  input  logic                       write_error_i,
+  input  logic                       write_valid_i,
+  output logic                       write_ready_o,
 
   input  sram_cfg_data_t  sram_cfg_data_i,
   input  sram_cfg_tag_t   sram_cfg_tag_i
@@ -119,7 +119,7 @@ module snitch_icache_lookup_parallel #(
   // looked up tag and data.
   logic valid_q;
   logic [CFG.FETCH_AW-1:0] addr_q;
-  logic [CFG.ID_WIDTH_REQ-1:0] id_q;
+  logic [CFG.ID_WIDTH-1:0] id_q;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
