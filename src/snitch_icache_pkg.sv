@@ -36,6 +36,7 @@ package snitch_icache_pkg;
     int unsigned FILL_AW;
     int unsigned FILL_DW;
     int unsigned L1_DATA_PARITY_BITS;
+    int unsigned L0_DATA_PARITY_BITS;
     bit L1_TAG_SCM;
     bit EARLY_LATCH;
     bit BUFFER_LOOKUP;
