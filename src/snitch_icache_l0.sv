@@ -561,6 +561,8 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     icache_events_o.l0_prefetch = prefetcher_out.vld;
     icache_events_o.l0_double_hit = hit_any & ~hit_early_is_onehot & in_valid_i;
     icache_events_o.l0_stall = !in_ready_o & in_valid_i;
+    icache_events_o.l0_tag_parity_error = in_valid_i & |tag_parity_error_vect;
+    icache_events_o.l0_data_parity_error = in_valid_i & data_parity_error;
   end
 
   // ----------

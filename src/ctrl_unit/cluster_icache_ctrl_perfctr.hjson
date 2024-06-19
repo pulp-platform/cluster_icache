@@ -19,7 +19,7 @@
     },
     { name: "NumL0Events",
       desc: "Number of L0 events",
-      default: "5" // Use performance counters for L0 events
+      default: "7" // Use performance counters for L0 events
     },
     { name: "NumL1Events",
       desc: "Number of L1 events",
