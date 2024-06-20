@@ -143,6 +143,15 @@ module snitch_icache_lookup_serial #(
         .DATA_WIDTH (CFG.TAG_WIDTH+2       )
       ) i_tag (
         .clk         ( clk_i                       ),
+`ifndef TARGET_SCM_USE_LATCH_SCM
+`ifdef TARGET_FPGA
+        .rst_n       ( rst_ni                      ),
+`elsif TARGET_VERILATOR
+        .rst_n       ( rst_ni                      ),
+`elsif TARGET_SCM_USE_FPGA_SCM
+        .rst_n       ( rst_ni                      ),
+`endif
+`endif
         .ReadEnable  ( tag_enable[i] && !tag_write ),
         .ReadAddr    ( tag_addr                    ),
         .ReadData    ( tag_rdata[i]                ),
