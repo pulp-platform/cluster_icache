@@ -38,16 +38,18 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   output logic                      out_rsp_ready_o
 );
 
+  localparam int unsigned TagParity = (CFG.L0_DATA_PARITY_BITS > 0) ? 1 : 0;
+
   typedef logic [CFG.FETCH_AW-1:0] addr_t;
   typedef struct packed {
-    logic [CFG.L0_TAG_WIDTH-1:0] tag;
-    logic                        vld;
+    logic [CFG.L0_TAG_WIDTH+TagParity-1:0] tag;
+    logic                                  vld;
   } tag_t;
 
   logic [CFG.L0_TAG_WIDTH-1:0] addr_tag, addr_tag_prefetch;
 
   tag_t [CFG.L0_LINE_COUNT-1:0] tag;
-  logic [CFG.L0_LINE_COUNT-1:0][CFG.LINE_WIDTH-1:0] data;
+  logic [CFG.L0_LINE_COUNT-1:0][CFG.LINE_WIDTH+CFG.L0_DATA_PARITY_BITS-1:0] data;
 
   logic [CFG.L0_LINE_COUNT-1:0] hit, hit_early, hit_prefetch;
   logic hit_early_is_onehot;
@@ -84,6 +86,9 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
 
   logic evict_because_miss, evict_because_prefetch;
 
+  logic data_parity_error;
+  logic [CFG.L0_LINE_COUNT-1:0] tag_parity_error_vect;
+
   typedef struct packed {
     logic                    is_prefetch;
     logic [CFG.FETCH_AW-1:0] addr;
@@ -104,22 +109,56 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   // ------------
   // Tag Compare
   // ------------
-  for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_cmp_fetch
-    assign hit_early[i] = tag[i].vld &
-      (tag[i].tag[CFG.L0_EARLY_TAG_WIDTH-1:0] == addr_tag[CFG.L0_EARLY_TAG_WIDTH-1:0]);
-    // The two signals calculate the same.
-    if (CFG.L0_TAG_WIDTH == CFG.L0_EARLY_TAG_WIDTH) begin : gen_hit_assign
-      assign hit[i] = hit_early[i];
-    // Compare the rest of the tag.
-    end else begin : gen_hit
-      assign hit[i] = hit_early[i] &
-        (tag[i].tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]
-          == addr_tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]);
+
+  if (CFG.L0_DATA_PARITY_BITS > 0) begin : gen_tag_cmp_reliable
+
+    // For every line, compute the current parity bit
+    logic [CFG.L0_LINE_COUNT-1:0] exp_tag_parity;
+    for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_exp_tag_parity
+      assign exp_tag_parity[i] = ~^tag[i].tag[CFG.L0_TAG_WIDTH-1:0];
     end
-    assign hit_prefetch[i] = tag[i].vld & (tag[i].tag == addr_tag_prefetch);
+
+    for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_cmp_fetch
+      // Compute a parity error vector comparing the expected parity bit and the current one.
+      assign tag_parity_error_vect[i] = (exp_tag_parity[i] != tag[i].tag[CFG.L0_TAG_WIDTH]) &&
+                                        tag[i].vld;
+      assign hit_early[i] = tag[i].vld &
+        (tag[i].tag[CFG.L0_EARLY_TAG_WIDTH-1:0] == addr_tag[CFG.L0_EARLY_TAG_WIDTH-1:0]);
+      // The two signals calculate the same.
+      if (CFG.L0_TAG_WIDTH == CFG.L0_EARLY_TAG_WIDTH) begin : gen_hit_assign
+        assign hit[i] = hit_early[i] & !tag_parity_error_vect[i];
+      // Compare the rest of the tag and corresponding parity error vector.
+      end else begin : gen_hit
+        assign hit[i] = hit_early[i] &
+          (tag[i].tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]
+            == addr_tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]) & !tag_parity_error_vect[i];
+      end
+      assign hit_prefetch[i] = tag[i].vld & (tag[i].tag[CFG.L0_TAG_WIDTH-1:0] == addr_tag_prefetch);
+    end
+
+    assign hit_any = |hit && !data_parity_error;
+  end else begin : gen_tag_cmp_standard
+
+    for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_cmp_fetch
+      assign hit_early[i] = tag[i].vld &
+        (tag[i].tag[CFG.L0_EARLY_TAG_WIDTH-1:0] == addr_tag[CFG.L0_EARLY_TAG_WIDTH-1:0]);
+      // The two signals calculate the same.
+      if (CFG.L0_TAG_WIDTH == CFG.L0_EARLY_TAG_WIDTH) begin : gen_hit_assign
+        assign hit[i] = hit_early[i];
+      // Compare the rest of the tag.
+      end else begin : gen_hit
+        assign hit[i] = hit_early[i] &
+          (tag[i].tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]
+            == addr_tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]);
+      end
+      assign hit_prefetch[i] = tag[i].vld & (tag[i].tag == addr_tag_prefetch);
+    end
+
+    assign hit_any = |hit;
+
+    assign tag_parity_error_vect = '0;
   end
 
-  assign hit_any = |hit;
   assign hit_prefetch_any = |hit_prefetch;
   assign miss = ~hit_any & in_valid_i & ~pending_refill_q;
 
@@ -129,40 +168,102 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     .clk_o (clk_inv)
   );
 
-  for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_array
-    // Tag Array
-    always_ff @(posedge clk_i or negedge rst_ni) begin
-      if (!rst_ni) begin
-        tag[i].vld <= 0;
-        tag[i].tag <= 0;
-      end else begin
-        if (evict_strb[i]) begin
-          tag[i].vld <= 1'b0;
-          tag[i].tag <= evict_because_prefetch ? addr_tag_prefetch : addr_tag;
-        end else if (validate_strb[i]) begin
-          tag[i].vld <= 1'b1;
-        end
-        if (flush_strb[i]) begin
-          tag[i].vld <= 1'b0;
-        end
-      end
+  localparam int unsigned LineParitySplit = CFG.LINE_WIDTH/CFG.L0_DATA_PARITY_BITS;
+  if (CFG.L0_DATA_PARITY_BITS > 0) begin : gen_tag_array_reliable
+
+    logic [CFG.L0_DATA_PARITY_BITS-1:0] data_parity;
+    // For every block of the configured block size, compute the parity bit
+    for (genvar i = 0; i < CFG.L0_DATA_PARITY_BITS; i++) begin : gen_data_parity
+      assign data_parity[i] =
+        ~^out_rsp_data_i[CFG.LINE_WIDTH - LineParitySplit*i-1 -: LineParitySplit];
     end
-    if (CFG.EARLY_LATCH) begin : gen_latch
-      logic clk_vld;
-      tc_clk_gating i_clk_gate (
-        .clk_i     (clk_inv         ),
-        .en_i      (validate_strb[i]),
-        .test_en_i (1'b0            ),
-        .clk_o     (clk_vld         )
-      );
-      // Data Array
-      always_latch begin
-        if (clk_vld) begin
-          data[i] <= out_rsp_data_i;
+
+    for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_array
+      // Compute parity bits
+      always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) begin
+          tag[i].vld <= 0;
+          tag[i].tag <= 0;
+        end else begin
+          if (evict_strb[i]) begin
+            tag[i].vld <= 1'b0;
+            tag[i].tag <= evict_because_prefetch ?
+                          {~^addr_tag_prefetch, addr_tag_prefetch} :
+                          {~^addr_tag, addr_tag};
+          end else if (validate_strb[i]) begin
+            tag[i].vld <= 1'b1;
+          end
+          if (flush_strb[i]) begin
+            tag[i].vld <= 1'b0;
+          end
         end
       end
-    end else begin : gen_ff
-      `FFLNR(data[i], out_rsp_data_i, validate_strb[i], clk_i)
+      if (CFG.EARLY_LATCH) begin : gen_latch
+        logic clk_vld;
+        tc_clk_gating i_clk_gate (
+          .clk_i     (clk_inv         ),
+          .en_i      (validate_strb[i]),
+          .test_en_i (1'b0            ),
+          .clk_o     (clk_vld         )
+        );
+        // Data Array
+        // Store both the parity and the data
+        /* verilator lint_off NOLATCH */
+        /* verilator lint_off COMBDLY */
+        always_latch begin
+          if (clk_vld) begin
+            data[i] <= {data_parity, out_rsp_data_i};
+          end
+        end
+        /* verilator lint_on COMBDLY */
+        /* verilator lint_on NOLATCH */
+      end else begin : gen_ff
+        `FFLNR(data[i], {data_parity, out_rsp_data_i}, validate_strb[i], clk_i)
+      end
+
+    end
+
+  end else begin : gen_tag_array_standard
+
+    for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_array
+      // Tag Array
+      always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) begin
+          tag[i].vld <= 0;
+          tag[i].tag <= 0;
+        end else begin
+          if (evict_strb[i]) begin
+            tag[i].vld <= 1'b0;
+            tag[i].tag <= evict_because_prefetch ? addr_tag_prefetch : addr_tag;
+          end else if (validate_strb[i]) begin
+            tag[i].vld <= 1'b1;
+          end
+          if (flush_strb[i]) begin
+            tag[i].vld <= 1'b0;
+          end
+        end
+      end
+      if (CFG.EARLY_LATCH) begin : gen_latch
+        logic clk_vld;
+        tc_clk_gating i_clk_gate (
+          .clk_i     (clk_inv         ),
+          .en_i      (validate_strb[i]),
+          .test_en_i (1'b0            ),
+          .clk_o     (clk_vld         )
+        );
+        // Data Array
+        /* verilator lint_off NOLATCH */
+        /* verilator lint_off COMBDLY */
+        always_latch begin
+          if (clk_vld) begin
+            data[i] <= out_rsp_data_i;
+          end
+        end
+        /* verilator lint_on COMBDLY */
+        /* verilator lint_on NOLATCH */
+      end else begin : gen_ff
+        `FFLNR(data[i], out_rsp_data_i, validate_strb[i], clk_i)
+      end
     end
   end
 
@@ -170,6 +271,29 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   // HIT
   // ----
   // we hit in the cache and there was a unique hit.
+
+  logic [CFG.L0_LINE_COUNT-1:0] data_parity_error_vect;
+
+  if (CFG.L0_DATA_PARITY_BITS > 0) begin : gen_data_parity_error
+    logic [CFG.L0_LINE_COUNT-1:0][CFG.L0_DATA_PARITY_BITS-1:0] exp_data_parity;
+    // For every line, we compute the expected parity for every block
+    // Then we determine which lines are faulty
+    for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_data_parity_error_vect
+      for (genvar j = 0; j < CFG.L0_DATA_PARITY_BITS; j++) begin : gen_exp_data_parity
+        assign exp_data_parity[i][j] =
+          ~^data[i][CFG.LINE_WIDTH - LineParitySplit*j-1 -: LineParitySplit];
+      end
+      assign data_parity_error_vect[i] =
+        (exp_data_parity[i] != data[i][CFG.LINE_WIDTH+:CFG.L0_DATA_PARITY_BITS]) && tag[i].vld;
+    end
+    // Check whether the currently selected data has an error
+    assign data_parity_error =
+      data_parity_error_vect >> in_addr_i[CFG.LINE_ALIGN-1:CFG.FETCH_ALIGN];
+  end else begin : gen_data_parity_norel
+    assign data_parity_error_vect = '0;
+    assign data_parity_error = '0;
+  end
+
   assign in_ready_o = hit_any;
 
   logic [CFG.LINE_WIDTH-1:0] ins_data;
@@ -248,8 +372,22 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
       // but didn't hit in the final comparison.
       flush_strb = ~hit & hit_early;
     end
+    flush_strb |= tag_parity_error_vect;
+    flush_strb |= data_parity_error_vect;
     if (flush_valid_i) flush_strb = '1;
   end
+
+  // Send a warning that an error was detected
+`ifdef TARGET_SIMULATION
+  always @ (posedge clk_i) begin
+    if (tag_parity_error_vect != '0 && data_parity_error_vect != '0)
+      $display("%t [l0cache]: tag and data fault: flushing tags: %b",$time, flush_strb);
+    else if (tag_parity_error_vect != '0)
+      $display("%t [l0cache]: tag fault: flushing tags: %b",$time, flush_strb);
+    else if (data_parity_error_vect != '0)
+      $display("%t [l0cache]: data fault: flushing tags: %b",$time, flush_strb);
+  end
+`endif
 
   // -------------
   // Miss Handling
@@ -423,6 +561,8 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     icache_events_o.l0_prefetch = prefetcher_out.vld;
     icache_events_o.l0_double_hit = hit_any & ~hit_early_is_onehot & in_valid_i;
     icache_events_o.l0_stall = !in_ready_o & in_valid_i;
+    icache_events_o.l0_tag_parity_error = in_valid_i & |tag_parity_error_vect;
+    icache_events_o.l0_data_parity_error = in_valid_i & data_parity_error;
   end
 
   // ----------

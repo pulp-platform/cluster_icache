@@ -12,6 +12,8 @@ package snitch_icache_pkg;
     logic l0_prefetch;
     logic l0_double_hit;
     logic l0_stall;
+    logic l0_tag_parity_error;
+    logic l0_data_parity_error;
   } icache_l0_events_t;
 
   typedef struct packed {
@@ -36,6 +38,7 @@ package snitch_icache_pkg;
     int unsigned FILL_AW;
     int unsigned FILL_DW;
     int unsigned L1_DATA_PARITY_BITS;
+    int unsigned L0_DATA_PARITY_BITS;
     bit L1_TAG_SCM;
     bit EARLY_LATCH;
     bit BUFFER_LOOKUP;

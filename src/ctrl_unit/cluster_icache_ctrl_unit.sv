@@ -78,6 +78,10 @@ module cluster_icache_ctrl_unit import snitch_icache_pkg::*; #(
                                                          l0_events_i[i].l0_double_hit;
       counters_reg[NumL1Events + i*NumL0Events + 4].de = reg2hw.enable_counters.q &
                                                          l0_events_i[i].l0_stall;
+      counters_reg[NumL1Events + i*NumL0Events + 5].de = reg2hw.enable_counters.q &
+                                                         l0_events_i[i].l0_tag_parity_error;
+      counters_reg[NumL1Events + i*NumL0Events + 6].de = reg2hw.enable_counters.q &
+                                                         l0_events_i[i].l0_data_parity_error;
     end
 
     // Clear on global clear signal

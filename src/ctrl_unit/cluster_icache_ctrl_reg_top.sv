@@ -10,7 +10,7 @@
 module cluster_icache_ctrl_reg_top #(
   parameter type reg_req_t = logic,
   parameter type reg_rsp_t = logic,
-  parameter int AW = 8
+  parameter int AW = 9
 ) (
   input logic clk_i,
   input logic rst_ni,
@@ -231,6 +231,54 @@ module cluster_icache_ctrl_reg_top #(
   logic [31:0] counters_45_qs;
   logic [31:0] counters_45_wd;
   logic counters_45_we;
+  logic [31:0] counters_46_qs;
+  logic [31:0] counters_46_wd;
+  logic counters_46_we;
+  logic [31:0] counters_47_qs;
+  logic [31:0] counters_47_wd;
+  logic counters_47_we;
+  logic [31:0] counters_48_qs;
+  logic [31:0] counters_48_wd;
+  logic counters_48_we;
+  logic [31:0] counters_49_qs;
+  logic [31:0] counters_49_wd;
+  logic counters_49_we;
+  logic [31:0] counters_50_qs;
+  logic [31:0] counters_50_wd;
+  logic counters_50_we;
+  logic [31:0] counters_51_qs;
+  logic [31:0] counters_51_wd;
+  logic counters_51_we;
+  logic [31:0] counters_52_qs;
+  logic [31:0] counters_52_wd;
+  logic counters_52_we;
+  logic [31:0] counters_53_qs;
+  logic [31:0] counters_53_wd;
+  logic counters_53_we;
+  logic [31:0] counters_54_qs;
+  logic [31:0] counters_54_wd;
+  logic counters_54_we;
+  logic [31:0] counters_55_qs;
+  logic [31:0] counters_55_wd;
+  logic counters_55_we;
+  logic [31:0] counters_56_qs;
+  logic [31:0] counters_56_wd;
+  logic counters_56_we;
+  logic [31:0] counters_57_qs;
+  logic [31:0] counters_57_wd;
+  logic counters_57_we;
+  logic [31:0] counters_58_qs;
+  logic [31:0] counters_58_wd;
+  logic counters_58_we;
+  logic [31:0] counters_59_qs;
+  logic [31:0] counters_59_wd;
+  logic counters_59_we;
+  logic [31:0] counters_60_qs;
+  logic [31:0] counters_60_wd;
+  logic counters_60_we;
+  logic [31:0] counters_61_qs;
+  logic [31:0] counters_61_wd;
+  logic counters_61_we;
 
   // Register instances
   // R[enable]: V(False)
@@ -1621,10 +1669,442 @@ module cluster_icache_ctrl_reg_top #(
     .qs     (counters_45_qs)
   );
 
+  // Subregister 46 of Multireg counters
+  // R[counters_46]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_46 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_46_we),
+    .wd     (counters_46_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[46].de),
+    .d      (hw2reg.counters[46].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[46].q ),
+
+    // to register interface (read)
+    .qs     (counters_46_qs)
+  );
+
+  // Subregister 47 of Multireg counters
+  // R[counters_47]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_47 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_47_we),
+    .wd     (counters_47_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[47].de),
+    .d      (hw2reg.counters[47].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[47].q ),
+
+    // to register interface (read)
+    .qs     (counters_47_qs)
+  );
+
+  // Subregister 48 of Multireg counters
+  // R[counters_48]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_48 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_48_we),
+    .wd     (counters_48_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[48].de),
+    .d      (hw2reg.counters[48].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[48].q ),
+
+    // to register interface (read)
+    .qs     (counters_48_qs)
+  );
+
+  // Subregister 49 of Multireg counters
+  // R[counters_49]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_49 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_49_we),
+    .wd     (counters_49_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[49].de),
+    .d      (hw2reg.counters[49].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[49].q ),
+
+    // to register interface (read)
+    .qs     (counters_49_qs)
+  );
+
+  // Subregister 50 of Multireg counters
+  // R[counters_50]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_50 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_50_we),
+    .wd     (counters_50_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[50].de),
+    .d      (hw2reg.counters[50].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[50].q ),
+
+    // to register interface (read)
+    .qs     (counters_50_qs)
+  );
+
+  // Subregister 51 of Multireg counters
+  // R[counters_51]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_51 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_51_we),
+    .wd     (counters_51_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[51].de),
+    .d      (hw2reg.counters[51].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[51].q ),
+
+    // to register interface (read)
+    .qs     (counters_51_qs)
+  );
+
+  // Subregister 52 of Multireg counters
+  // R[counters_52]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_52 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_52_we),
+    .wd     (counters_52_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[52].de),
+    .d      (hw2reg.counters[52].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[52].q ),
+
+    // to register interface (read)
+    .qs     (counters_52_qs)
+  );
+
+  // Subregister 53 of Multireg counters
+  // R[counters_53]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_53 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_53_we),
+    .wd     (counters_53_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[53].de),
+    .d      (hw2reg.counters[53].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[53].q ),
+
+    // to register interface (read)
+    .qs     (counters_53_qs)
+  );
+
+  // Subregister 54 of Multireg counters
+  // R[counters_54]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_54 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_54_we),
+    .wd     (counters_54_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[54].de),
+    .d      (hw2reg.counters[54].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[54].q ),
+
+    // to register interface (read)
+    .qs     (counters_54_qs)
+  );
+
+  // Subregister 55 of Multireg counters
+  // R[counters_55]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_55 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_55_we),
+    .wd     (counters_55_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[55].de),
+    .d      (hw2reg.counters[55].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[55].q ),
+
+    // to register interface (read)
+    .qs     (counters_55_qs)
+  );
+
+  // Subregister 56 of Multireg counters
+  // R[counters_56]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_56 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_56_we),
+    .wd     (counters_56_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[56].de),
+    .d      (hw2reg.counters[56].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[56].q ),
+
+    // to register interface (read)
+    .qs     (counters_56_qs)
+  );
+
+  // Subregister 57 of Multireg counters
+  // R[counters_57]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_57 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_57_we),
+    .wd     (counters_57_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[57].de),
+    .d      (hw2reg.counters[57].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[57].q ),
+
+    // to register interface (read)
+    .qs     (counters_57_qs)
+  );
+
+  // Subregister 58 of Multireg counters
+  // R[counters_58]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_58 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_58_we),
+    .wd     (counters_58_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[58].de),
+    .d      (hw2reg.counters[58].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[58].q ),
+
+    // to register interface (read)
+    .qs     (counters_58_qs)
+  );
+
+  // Subregister 59 of Multireg counters
+  // R[counters_59]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_59 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_59_we),
+    .wd     (counters_59_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[59].de),
+    .d      (hw2reg.counters[59].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[59].q ),
+
+    // to register interface (read)
+    .qs     (counters_59_qs)
+  );
+
+  // Subregister 60 of Multireg counters
+  // R[counters_60]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_60 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_60_we),
+    .wd     (counters_60_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[60].de),
+    .d      (hw2reg.counters[60].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[60].q ),
+
+    // to register interface (read)
+    .qs     (counters_60_qs)
+  );
+
+  // Subregister 61 of Multireg counters
+  // R[counters_61]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("W0C"),
+    .RESVAL  (32'h0)
+  ) u_counters_61 (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (counters_61_we),
+    .wd     (counters_61_wd),
+
+    // from internal hardware
+    .de     (hw2reg.counters[61].de),
+    .d      (hw2reg.counters[61].d ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.counters[61].q ),
+
+    // to register interface (read)
+    .qs     (counters_61_qs)
+  );
 
 
 
-  logic [52:0] addr_hit;
+
+  logic [68:0] addr_hit;
   always_comb begin
     addr_hit = '0;
     addr_hit[ 0] = (reg_addr == CLUSTER_ICACHE_CTRL_ENABLE_OFFSET);
@@ -1680,6 +2160,22 @@ module cluster_icache_ctrl_reg_top #(
     addr_hit[50] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_43_OFFSET);
     addr_hit[51] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_44_OFFSET);
     addr_hit[52] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_45_OFFSET);
+    addr_hit[53] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_46_OFFSET);
+    addr_hit[54] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_47_OFFSET);
+    addr_hit[55] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_48_OFFSET);
+    addr_hit[56] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_49_OFFSET);
+    addr_hit[57] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_50_OFFSET);
+    addr_hit[58] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_51_OFFSET);
+    addr_hit[59] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_52_OFFSET);
+    addr_hit[60] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_53_OFFSET);
+    addr_hit[61] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_54_OFFSET);
+    addr_hit[62] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_55_OFFSET);
+    addr_hit[63] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_56_OFFSET);
+    addr_hit[64] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_57_OFFSET);
+    addr_hit[65] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_58_OFFSET);
+    addr_hit[66] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_59_OFFSET);
+    addr_hit[67] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_60_OFFSET);
+    addr_hit[68] = (reg_addr == CLUSTER_ICACHE_CTRL_COUNTERS_61_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -1739,7 +2235,23 @@ module cluster_icache_ctrl_reg_top #(
                (addr_hit[49] & (|(CLUSTER_ICACHE_CTRL_PERMIT[49] & ~reg_be))) |
                (addr_hit[50] & (|(CLUSTER_ICACHE_CTRL_PERMIT[50] & ~reg_be))) |
                (addr_hit[51] & (|(CLUSTER_ICACHE_CTRL_PERMIT[51] & ~reg_be))) |
-               (addr_hit[52] & (|(CLUSTER_ICACHE_CTRL_PERMIT[52] & ~reg_be)))));
+               (addr_hit[52] & (|(CLUSTER_ICACHE_CTRL_PERMIT[52] & ~reg_be))) |
+               (addr_hit[53] & (|(CLUSTER_ICACHE_CTRL_PERMIT[53] & ~reg_be))) |
+               (addr_hit[54] & (|(CLUSTER_ICACHE_CTRL_PERMIT[54] & ~reg_be))) |
+               (addr_hit[55] & (|(CLUSTER_ICACHE_CTRL_PERMIT[55] & ~reg_be))) |
+               (addr_hit[56] & (|(CLUSTER_ICACHE_CTRL_PERMIT[56] & ~reg_be))) |
+               (addr_hit[57] & (|(CLUSTER_ICACHE_CTRL_PERMIT[57] & ~reg_be))) |
+               (addr_hit[58] & (|(CLUSTER_ICACHE_CTRL_PERMIT[58] & ~reg_be))) |
+               (addr_hit[59] & (|(CLUSTER_ICACHE_CTRL_PERMIT[59] & ~reg_be))) |
+               (addr_hit[60] & (|(CLUSTER_ICACHE_CTRL_PERMIT[60] & ~reg_be))) |
+               (addr_hit[61] & (|(CLUSTER_ICACHE_CTRL_PERMIT[61] & ~reg_be))) |
+               (addr_hit[62] & (|(CLUSTER_ICACHE_CTRL_PERMIT[62] & ~reg_be))) |
+               (addr_hit[63] & (|(CLUSTER_ICACHE_CTRL_PERMIT[63] & ~reg_be))) |
+               (addr_hit[64] & (|(CLUSTER_ICACHE_CTRL_PERMIT[64] & ~reg_be))) |
+               (addr_hit[65] & (|(CLUSTER_ICACHE_CTRL_PERMIT[65] & ~reg_be))) |
+               (addr_hit[66] & (|(CLUSTER_ICACHE_CTRL_PERMIT[66] & ~reg_be))) |
+               (addr_hit[67] & (|(CLUSTER_ICACHE_CTRL_PERMIT[67] & ~reg_be))) |
+               (addr_hit[68] & (|(CLUSTER_ICACHE_CTRL_PERMIT[68] & ~reg_be)))));
   end
 
   assign enable_we = addr_hit[0] & reg_we & !reg_error;
@@ -1904,6 +2416,54 @@ module cluster_icache_ctrl_reg_top #(
 
   assign counters_45_we = addr_hit[52] & reg_we & !reg_error;
   assign counters_45_wd = reg_wdata[31:0];
+
+  assign counters_46_we = addr_hit[53] & reg_we & !reg_error;
+  assign counters_46_wd = reg_wdata[31:0];
+
+  assign counters_47_we = addr_hit[54] & reg_we & !reg_error;
+  assign counters_47_wd = reg_wdata[31:0];
+
+  assign counters_48_we = addr_hit[55] & reg_we & !reg_error;
+  assign counters_48_wd = reg_wdata[31:0];
+
+  assign counters_49_we = addr_hit[56] & reg_we & !reg_error;
+  assign counters_49_wd = reg_wdata[31:0];
+
+  assign counters_50_we = addr_hit[57] & reg_we & !reg_error;
+  assign counters_50_wd = reg_wdata[31:0];
+
+  assign counters_51_we = addr_hit[58] & reg_we & !reg_error;
+  assign counters_51_wd = reg_wdata[31:0];
+
+  assign counters_52_we = addr_hit[59] & reg_we & !reg_error;
+  assign counters_52_wd = reg_wdata[31:0];
+
+  assign counters_53_we = addr_hit[60] & reg_we & !reg_error;
+  assign counters_53_wd = reg_wdata[31:0];
+
+  assign counters_54_we = addr_hit[61] & reg_we & !reg_error;
+  assign counters_54_wd = reg_wdata[31:0];
+
+  assign counters_55_we = addr_hit[62] & reg_we & !reg_error;
+  assign counters_55_wd = reg_wdata[31:0];
+
+  assign counters_56_we = addr_hit[63] & reg_we & !reg_error;
+  assign counters_56_wd = reg_wdata[31:0];
+
+  assign counters_57_we = addr_hit[64] & reg_we & !reg_error;
+  assign counters_57_wd = reg_wdata[31:0];
+
+  assign counters_58_we = addr_hit[65] & reg_we & !reg_error;
+  assign counters_58_wd = reg_wdata[31:0];
+
+  assign counters_59_we = addr_hit[66] & reg_we & !reg_error;
+  assign counters_59_wd = reg_wdata[31:0];
+
+  assign counters_60_we = addr_hit[67] & reg_we & !reg_error;
+  assign counters_60_wd = reg_wdata[31:0];
+
+  assign counters_61_we = addr_hit[68] & reg_we & !reg_error;
+  assign counters_61_wd = reg_wdata[31:0];
 
   // Read data return
   always_comb begin
@@ -2121,6 +2681,70 @@ module cluster_icache_ctrl_reg_top #(
         reg_rdata_next[31:0] = counters_45_qs;
       end
 
+      addr_hit[53]: begin
+        reg_rdata_next[31:0] = counters_46_qs;
+      end
+
+      addr_hit[54]: begin
+        reg_rdata_next[31:0] = counters_47_qs;
+      end
+
+      addr_hit[55]: begin
+        reg_rdata_next[31:0] = counters_48_qs;
+      end
+
+      addr_hit[56]: begin
+        reg_rdata_next[31:0] = counters_49_qs;
+      end
+
+      addr_hit[57]: begin
+        reg_rdata_next[31:0] = counters_50_qs;
+      end
+
+      addr_hit[58]: begin
+        reg_rdata_next[31:0] = counters_51_qs;
+      end
+
+      addr_hit[59]: begin
+        reg_rdata_next[31:0] = counters_52_qs;
+      end
+
+      addr_hit[60]: begin
+        reg_rdata_next[31:0] = counters_53_qs;
+      end
+
+      addr_hit[61]: begin
+        reg_rdata_next[31:0] = counters_54_qs;
+      end
+
+      addr_hit[62]: begin
+        reg_rdata_next[31:0] = counters_55_qs;
+      end
+
+      addr_hit[63]: begin
+        reg_rdata_next[31:0] = counters_56_qs;
+      end
+
+      addr_hit[64]: begin
+        reg_rdata_next[31:0] = counters_57_qs;
+      end
+
+      addr_hit[65]: begin
+        reg_rdata_next[31:0] = counters_58_qs;
+      end
+
+      addr_hit[66]: begin
+        reg_rdata_next[31:0] = counters_59_qs;
+      end
+
+      addr_hit[67]: begin
+        reg_rdata_next[31:0] = counters_60_qs;
+      end
+
+      addr_hit[68]: begin
+        reg_rdata_next[31:0] = counters_61_qs;
+      end
+
       default: begin
         reg_rdata_next = '1;
       end
@@ -2143,7 +2767,7 @@ endmodule
 
 module cluster_icache_ctrl_reg_top_intf
 #(
-  parameter int AW = 8,
+  parameter int AW = 9,
   localparam int DW = 32
 ) (
   input logic clk_i,

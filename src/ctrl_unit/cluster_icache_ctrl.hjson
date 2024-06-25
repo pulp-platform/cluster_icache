@@ -19,7 +19,7 @@
     },
     { name: "NumL0Events",
       desc: "Number of L0 events",
-      default: "5"
+      default: "7"
     },
     { name: "NumL1Events",
       desc: "Number of L1 events",
@@ -27,7 +27,7 @@
     },
     { name: "NumAvailableCounters",
       desc: "Number of available counters",
-      default: "46" // NumL1Events + NumCores * NumL0Events
+      default: "62" // NumL1Events + NumCores * NumL0Events
     },
   ],
 

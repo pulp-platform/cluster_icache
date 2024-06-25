@@ -8,7 +8,7 @@ package cluster_icache_ctrl_perfctr_reg_pkg;
 
   // Param list
   parameter int NumCores = 8;
-  parameter int NumL0Events = 5;
+  parameter int NumL0Events = 7;
   parameter int NumL1Events = 6;
   parameter int NumAvailableCounters = 6;
 

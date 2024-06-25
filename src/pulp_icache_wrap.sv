@@ -36,6 +36,8 @@ module pulp_icache_wrap #(
   parameter int SET_COUNT = 1,
   /// Error detection
   parameter int unsigned L1DataParityWidth = 0,
+  /// Error detection L0
+  parameter int unsigned L0DataParityWidth = L1DataParityWidth,
   /// Fetch interface address width. Same as FILL_AW; >= 1.
   parameter int FetchAddrWidth = -1,
   /// Fetch interface data width. Power of two; >= 8.
@@ -206,6 +208,7 @@ module pulp_icache_wrap #(
     .FILL_DW            ( AxiDataWidth    ),
     .FETCH_PRIORITY     ( 1               ),
     .MERGE_FETCHES      ( 1               ),
+    .L0_DATA_PARITY_BITS( L0DataParityWidth ),
     .L1_DATA_PARITY_BITS( L1DataParityWidth ),
     .L1_TAG_SCM         ( 1               ),
     .SERIAL_LOOKUP      ( 1               ),

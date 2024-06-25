@@ -8,12 +8,12 @@ package cluster_icache_ctrl_reg_pkg;
 
   // Param list
   parameter int NumCores = 8;
-  parameter int NumL0Events = 5;
+  parameter int NumL0Events = 7;
   parameter int NumL1Events = 6;
-  parameter int NumAvailableCounters = 46;
+  parameter int NumAvailableCounters = 62;
 
   // Address widths within the block
-  parameter int BlockAw = 8;
+  parameter int BlockAw = 9;
 
   ////////////////////////////
   // Typedefs for registers //
@@ -78,79 +78,95 @@ package cluster_icache_ctrl_reg_pkg;
 
   // Register -> HW type
   typedef struct packed {
-    cluster_icache_ctrl_reg2hw_enable_reg_t enable; // [1489:1489]
-    cluster_icache_ctrl_reg2hw_flush_reg_t flush; // [1488:1487]
-    cluster_icache_ctrl_reg2hw_flush_l1_only_reg_t flush_l1_only; // [1486:1485]
-    cluster_icache_ctrl_reg2hw_sel_flush_icache_reg_t sel_flush_icache; // [1484:1476]
-    cluster_icache_ctrl_reg2hw_clear_counters_reg_t clear_counters; // [1475:1474]
-    cluster_icache_ctrl_reg2hw_enable_counters_reg_t enable_counters; // [1473:1473]
-    cluster_icache_ctrl_reg2hw_enable_prefetch_reg_t enable_prefetch; // [1472:1472]
-    cluster_icache_ctrl_reg2hw_counters_mreg_t [45:0] counters; // [1471:0]
+    cluster_icache_ctrl_reg2hw_enable_reg_t enable; // [2001:2001]
+    cluster_icache_ctrl_reg2hw_flush_reg_t flush; // [2000:1999]
+    cluster_icache_ctrl_reg2hw_flush_l1_only_reg_t flush_l1_only; // [1998:1997]
+    cluster_icache_ctrl_reg2hw_sel_flush_icache_reg_t sel_flush_icache; // [1996:1988]
+    cluster_icache_ctrl_reg2hw_clear_counters_reg_t clear_counters; // [1987:1986]
+    cluster_icache_ctrl_reg2hw_enable_counters_reg_t enable_counters; // [1985:1985]
+    cluster_icache_ctrl_reg2hw_enable_prefetch_reg_t enable_prefetch; // [1984:1984]
+    cluster_icache_ctrl_reg2hw_counters_mreg_t [61:0] counters; // [1983:0]
   } cluster_icache_ctrl_reg2hw_t;
 
   // HW -> register type
   typedef struct packed {
-    cluster_icache_ctrl_hw2reg_flush_reg_t flush; // [1528:1528]
-    cluster_icache_ctrl_hw2reg_flush_l1_only_reg_t flush_l1_only; // [1527:1527]
-    cluster_icache_ctrl_hw2reg_sel_flush_icache_reg_t sel_flush_icache; // [1526:1519]
-    cluster_icache_ctrl_hw2reg_clear_counters_reg_t clear_counters; // [1518:1518]
-    cluster_icache_ctrl_hw2reg_counters_mreg_t [45:0] counters; // [1517:0]
+    cluster_icache_ctrl_hw2reg_flush_reg_t flush; // [2056:2056]
+    cluster_icache_ctrl_hw2reg_flush_l1_only_reg_t flush_l1_only; // [2055:2055]
+    cluster_icache_ctrl_hw2reg_sel_flush_icache_reg_t sel_flush_icache; // [2054:2047]
+    cluster_icache_ctrl_hw2reg_clear_counters_reg_t clear_counters; // [2046:2046]
+    cluster_icache_ctrl_hw2reg_counters_mreg_t [61:0] counters; // [2045:0]
   } cluster_icache_ctrl_hw2reg_t;
 
   // Register offsets
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_ENABLE_OFFSET = 8'h 0;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_FLUSH_OFFSET = 8'h 4;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_FLUSH_L1_ONLY_OFFSET = 8'h 8;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_SEL_FLUSH_ICACHE_OFFSET = 8'h c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_CLEAR_COUNTERS_OFFSET = 8'h 10;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_ENABLE_COUNTERS_OFFSET = 8'h 14;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_ENABLE_PREFETCH_OFFSET = 8'h 1c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_0_OFFSET = 8'h 20;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_1_OFFSET = 8'h 24;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_2_OFFSET = 8'h 28;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_3_OFFSET = 8'h 2c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_4_OFFSET = 8'h 30;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_5_OFFSET = 8'h 34;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_6_OFFSET = 8'h 38;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_7_OFFSET = 8'h 3c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_8_OFFSET = 8'h 40;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_9_OFFSET = 8'h 44;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_10_OFFSET = 8'h 48;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_11_OFFSET = 8'h 4c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_12_OFFSET = 8'h 50;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_13_OFFSET = 8'h 54;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_14_OFFSET = 8'h 58;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_15_OFFSET = 8'h 5c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_16_OFFSET = 8'h 60;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_17_OFFSET = 8'h 64;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_18_OFFSET = 8'h 68;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_19_OFFSET = 8'h 6c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_20_OFFSET = 8'h 70;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_21_OFFSET = 8'h 74;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_22_OFFSET = 8'h 78;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_23_OFFSET = 8'h 7c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_24_OFFSET = 8'h 80;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_25_OFFSET = 8'h 84;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_26_OFFSET = 8'h 88;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_27_OFFSET = 8'h 8c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_28_OFFSET = 8'h 90;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_29_OFFSET = 8'h 94;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_30_OFFSET = 8'h 98;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_31_OFFSET = 8'h 9c;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_32_OFFSET = 8'h a0;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_33_OFFSET = 8'h a4;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_34_OFFSET = 8'h a8;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_35_OFFSET = 8'h ac;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_36_OFFSET = 8'h b0;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_37_OFFSET = 8'h b4;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_38_OFFSET = 8'h b8;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_39_OFFSET = 8'h bc;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_40_OFFSET = 8'h c0;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_41_OFFSET = 8'h c4;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_42_OFFSET = 8'h c8;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_43_OFFSET = 8'h cc;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_44_OFFSET = 8'h d0;
-  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_45_OFFSET = 8'h d4;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_ENABLE_OFFSET = 9'h 0;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_FLUSH_OFFSET = 9'h 4;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_FLUSH_L1_ONLY_OFFSET = 9'h 8;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_SEL_FLUSH_ICACHE_OFFSET = 9'h c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_CLEAR_COUNTERS_OFFSET = 9'h 10;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_ENABLE_COUNTERS_OFFSET = 9'h 14;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_ENABLE_PREFETCH_OFFSET = 9'h 1c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_0_OFFSET = 9'h 20;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_1_OFFSET = 9'h 24;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_2_OFFSET = 9'h 28;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_3_OFFSET = 9'h 2c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_4_OFFSET = 9'h 30;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_5_OFFSET = 9'h 34;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_6_OFFSET = 9'h 38;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_7_OFFSET = 9'h 3c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_8_OFFSET = 9'h 40;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_9_OFFSET = 9'h 44;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_10_OFFSET = 9'h 48;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_11_OFFSET = 9'h 4c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_12_OFFSET = 9'h 50;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_13_OFFSET = 9'h 54;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_14_OFFSET = 9'h 58;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_15_OFFSET = 9'h 5c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_16_OFFSET = 9'h 60;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_17_OFFSET = 9'h 64;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_18_OFFSET = 9'h 68;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_19_OFFSET = 9'h 6c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_20_OFFSET = 9'h 70;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_21_OFFSET = 9'h 74;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_22_OFFSET = 9'h 78;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_23_OFFSET = 9'h 7c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_24_OFFSET = 9'h 80;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_25_OFFSET = 9'h 84;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_26_OFFSET = 9'h 88;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_27_OFFSET = 9'h 8c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_28_OFFSET = 9'h 90;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_29_OFFSET = 9'h 94;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_30_OFFSET = 9'h 98;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_31_OFFSET = 9'h 9c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_32_OFFSET = 9'h a0;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_33_OFFSET = 9'h a4;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_34_OFFSET = 9'h a8;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_35_OFFSET = 9'h ac;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_36_OFFSET = 9'h b0;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_37_OFFSET = 9'h b4;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_38_OFFSET = 9'h b8;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_39_OFFSET = 9'h bc;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_40_OFFSET = 9'h c0;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_41_OFFSET = 9'h c4;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_42_OFFSET = 9'h c8;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_43_OFFSET = 9'h cc;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_44_OFFSET = 9'h d0;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_45_OFFSET = 9'h d4;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_46_OFFSET = 9'h d8;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_47_OFFSET = 9'h dc;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_48_OFFSET = 9'h e0;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_49_OFFSET = 9'h e4;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_50_OFFSET = 9'h e8;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_51_OFFSET = 9'h ec;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_52_OFFSET = 9'h f0;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_53_OFFSET = 9'h f4;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_54_OFFSET = 9'h f8;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_55_OFFSET = 9'h fc;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_56_OFFSET = 9'h 100;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_57_OFFSET = 9'h 104;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_58_OFFSET = 9'h 108;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_59_OFFSET = 9'h 10c;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_60_OFFSET = 9'h 110;
+  parameter logic [BlockAw-1:0] CLUSTER_ICACHE_CTRL_COUNTERS_61_OFFSET = 9'h 114;
 
   // Reset values for hwext registers and their fields
   parameter logic [0:0] CLUSTER_ICACHE_CTRL_FLUSH_RESVAL = 1'h 0;
@@ -216,11 +232,27 @@ package cluster_icache_ctrl_reg_pkg;
     CLUSTER_ICACHE_CTRL_COUNTERS_42,
     CLUSTER_ICACHE_CTRL_COUNTERS_43,
     CLUSTER_ICACHE_CTRL_COUNTERS_44,
-    CLUSTER_ICACHE_CTRL_COUNTERS_45
+    CLUSTER_ICACHE_CTRL_COUNTERS_45,
+    CLUSTER_ICACHE_CTRL_COUNTERS_46,
+    CLUSTER_ICACHE_CTRL_COUNTERS_47,
+    CLUSTER_ICACHE_CTRL_COUNTERS_48,
+    CLUSTER_ICACHE_CTRL_COUNTERS_49,
+    CLUSTER_ICACHE_CTRL_COUNTERS_50,
+    CLUSTER_ICACHE_CTRL_COUNTERS_51,
+    CLUSTER_ICACHE_CTRL_COUNTERS_52,
+    CLUSTER_ICACHE_CTRL_COUNTERS_53,
+    CLUSTER_ICACHE_CTRL_COUNTERS_54,
+    CLUSTER_ICACHE_CTRL_COUNTERS_55,
+    CLUSTER_ICACHE_CTRL_COUNTERS_56,
+    CLUSTER_ICACHE_CTRL_COUNTERS_57,
+    CLUSTER_ICACHE_CTRL_COUNTERS_58,
+    CLUSTER_ICACHE_CTRL_COUNTERS_59,
+    CLUSTER_ICACHE_CTRL_COUNTERS_60,
+    CLUSTER_ICACHE_CTRL_COUNTERS_61
   } cluster_icache_ctrl_id_e;
 
   // Register width information to check illegal writes
-  parameter logic [3:0] CLUSTER_ICACHE_CTRL_PERMIT [53] = '{
+  parameter logic [3:0] CLUSTER_ICACHE_CTRL_PERMIT [69] = '{
     4'b 0001, // index[ 0] CLUSTER_ICACHE_CTRL_ENABLE
     4'b 0001, // index[ 1] CLUSTER_ICACHE_CTRL_FLUSH
     4'b 0001, // index[ 2] CLUSTER_ICACHE_CTRL_FLUSH_L1_ONLY
@@ -273,7 +305,23 @@ package cluster_icache_ctrl_reg_pkg;
     4'b 1111, // index[49] CLUSTER_ICACHE_CTRL_COUNTERS_42
     4'b 1111, // index[50] CLUSTER_ICACHE_CTRL_COUNTERS_43
     4'b 1111, // index[51] CLUSTER_ICACHE_CTRL_COUNTERS_44
-    4'b 1111  // index[52] CLUSTER_ICACHE_CTRL_COUNTERS_45
+    4'b 1111, // index[52] CLUSTER_ICACHE_CTRL_COUNTERS_45
+    4'b 1111, // index[53] CLUSTER_ICACHE_CTRL_COUNTERS_46
+    4'b 1111, // index[54] CLUSTER_ICACHE_CTRL_COUNTERS_47
+    4'b 1111, // index[55] CLUSTER_ICACHE_CTRL_COUNTERS_48
+    4'b 1111, // index[56] CLUSTER_ICACHE_CTRL_COUNTERS_49
+    4'b 1111, // index[57] CLUSTER_ICACHE_CTRL_COUNTERS_50
+    4'b 1111, // index[58] CLUSTER_ICACHE_CTRL_COUNTERS_51
+    4'b 1111, // index[59] CLUSTER_ICACHE_CTRL_COUNTERS_52
+    4'b 1111, // index[60] CLUSTER_ICACHE_CTRL_COUNTERS_53
+    4'b 1111, // index[61] CLUSTER_ICACHE_CTRL_COUNTERS_54
+    4'b 1111, // index[62] CLUSTER_ICACHE_CTRL_COUNTERS_55
+    4'b 1111, // index[63] CLUSTER_ICACHE_CTRL_COUNTERS_56
+    4'b 1111, // index[64] CLUSTER_ICACHE_CTRL_COUNTERS_57
+    4'b 1111, // index[65] CLUSTER_ICACHE_CTRL_COUNTERS_58
+    4'b 1111, // index[66] CLUSTER_ICACHE_CTRL_COUNTERS_59
+    4'b 1111, // index[67] CLUSTER_ICACHE_CTRL_COUNTERS_60
+    4'b 1111  // index[68] CLUSTER_ICACHE_CTRL_COUNTERS_61
   };
 
 endpackage
