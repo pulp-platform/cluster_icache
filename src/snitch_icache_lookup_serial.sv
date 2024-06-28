@@ -45,7 +45,7 @@ module snitch_icache_lookup_serial #(
   input  sram_cfg_tag_t   sram_cfg_tag_i
 );
 
-  localparam int unsigned DataAddrWidth = $clog2(CFG.SET_COUNT) + CFG.COUNT_ALIGN;
+  localparam int unsigned DataAddrWidth = $clog2(CFG.WAY_COUNT) + CFG.COUNT_ALIGN;
 
 `ifndef SYNTHESIS
   initial assert(CFG != '0);
@@ -85,8 +85,8 @@ module snitch_icache_lookup_serial #(
   logic                       req_handshake;
 
   logic [CFG.COUNT_ALIGN-1:0] tag_addr;
-  logic [CFG.SET_COUNT-1:0]   tag_enable;
-  logic [CFG.TAG_WIDTH+1:0]   tag_wdata, tag_rdata [CFG.SET_COUNT];
+  logic [CFG.WAY_COUNT-1:0]   tag_enable;
+  logic [CFG.TAG_WIDTH+1:0]   tag_wdata, tag_rdata [CFG.WAY_COUNT];
   logic                       tag_write;
 
   tag_req_t                   tag_req_d, tag_req_q;
@@ -95,7 +95,7 @@ module snitch_icache_lookup_serial #(
   logic                       tag_handshake;
 
   logic [CFG.TAG_WIDTH-1:0]   required_tag;
-  logic [CFG.SET_COUNT-1:0]   line_hit;
+  logic [CFG.WAY_COUNT-1:0]   line_hit;
 
   logic [DataAddrWidth-1:0]   lookup_addr;
   logic [DataAddrWidth-1:0]   write_addr;
@@ -137,7 +137,7 @@ module snitch_icache_lookup_serial #(
 
   // Instantiate the tag sets.
   if (CFG.L1_TAG_SCM) begin : gen_scm
-    for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : g_sets
+    for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_sets
       register_file_1r_1w #(
         .ADDR_WIDTH ($clog2(CFG.LINE_COUNT)),
         .DATA_WIDTH (CFG.TAG_WIDTH+2       )
@@ -161,12 +161,12 @@ module snitch_icache_lookup_serial #(
       );
     end
   end else begin : gen_sram
-    logic [CFG.SET_COUNT*(CFG.TAG_WIDTH+2)-1:0] tag_rdata_flat;
-    for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : g_sets_rdata
+    logic [CFG.WAY_COUNT*(CFG.TAG_WIDTH+2)-1:0] tag_rdata_flat;
+    for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_sets_rdata
       assign tag_rdata[i] = tag_rdata_flat[i*(CFG.TAG_WIDTH+2)+:CFG.TAG_WIDTH+2];
     end
     tc_sram_impl #(
-      .DataWidth ( (CFG.TAG_WIDTH+2) * CFG.SET_COUNT ),
+      .DataWidth ( (CFG.TAG_WIDTH+2) * CFG.WAY_COUNT ),
       .ByteWidth ( CFG.TAG_WIDTH+2                   ),
       .NumWords  ( CFG.LINE_COUNT                    ),
       .NumPorts  ( 1                                 ),
@@ -179,16 +179,16 @@ module snitch_icache_lookup_serial #(
       .req_i   ( |tag_enable                ),
       .we_i    ( tag_write                  ),
       .addr_i  ( tag_addr                   ),
-      .wdata_i ( {CFG.SET_COUNT{tag_wdata}} ),
+      .wdata_i ( {CFG.WAY_COUNT{tag_wdata}} ),
       .be_i    ( tag_enable                 ),
       .rdata_o ( tag_rdata_flat             )
     );
   end
 
   // Determine which set hit
-  logic [CFG.SET_COUNT-1:0] errors;
+  logic [CFG.WAY_COUNT-1:0] errors;
   assign required_tag = tag_req_q.addr[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
-  for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : gen_line_hit
+  for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : gen_line_hit
     assign line_hit[i] = tag_rdata[i][CFG.TAG_WIDTH+1] &&
                          tag_rdata[i][CFG.TAG_WIDTH-1:0] == required_tag; // check valid bit and tag
     assign errors[i] = tag_rdata[i][CFG.TAG_WIDTH] && line_hit[i]; // check error bit
@@ -196,7 +196,7 @@ module snitch_icache_lookup_serial #(
   assign tag_rsp_s.hit = |line_hit;
   assign tag_rsp_s.error = |errors;
 
-  lzc #(.WIDTH(CFG.SET_COUNT)) i_lzc (
+  lzc #(.WIDTH(CFG.WAY_COUNT)) i_lzc (
     .in_i     ( line_hit       ),
     .cnt_o    ( tag_rsp_s.cset ),
     .empty_o  (                )
@@ -282,7 +282,7 @@ module snitch_icache_lookup_serial #(
 
   tc_sram_impl #(
     .DataWidth ( CFG.LINE_WIDTH                 ),
-    .NumWords  ( CFG.LINE_COUNT * CFG.SET_COUNT ),
+    .NumWords  ( CFG.LINE_COUNT * CFG.WAY_COUNT ),
     .NumPorts  ( 1                              ),
     .impl_in_t ( sram_cfg_data_t                )
   ) i_data (
