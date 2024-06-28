@@ -148,7 +148,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     tag_wdata  = {1'b1, write_error_i, write_tag_i};
     tag_write  = 1'b0;
 
-    write_ready_o = 1'b0;
+    write_ready_o = 1'b1;
     in_ready_o    = 1'b0;
     req_valid     = 1'b0;
 
@@ -160,18 +160,19 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
       tag_enable                   = '1;
       tag_wdata[CFG.TAG_WIDTH+1:0] = '0;
       tag_write                    = 1'b1;
+      write_ready_o = 1'b0;
     end else if (data_fault_valid) begin // Only if data has parity
       tag_addr                     = data_parity_inv_q.addr >> CFG.LINE_ALIGN;
       tag_enable                   = $unsigned(1 << data_parity_inv_q.cset);
       tag_wdata[CFG.TAG_WIDTH+1:0] = '0;
       tag_write                    = 1'b1;
       data_fault_ready             = 1'b1;
+      write_ready_o = 1'b0;
     end else if (write_valid_i) begin
       // Write a refill request
       tag_addr      = write_addr_i;
       tag_enable    = $unsigned(1 << write_set_i);
       tag_write     = 1'b1;
-      write_ready_o = 1'b1;
     end else if (faulty_hit_valid) begin // Only if tag has parity
       // we need to set second bit (valid) of write data of the previous adress to 0
       // we do not accept read requests and we do not store data in the pipeline.
