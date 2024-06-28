@@ -17,14 +17,14 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   input  logic rst_ni,
   input  logic flush_valid_i,
 
-  input  logic                      enable_prefetching_i,
-  output icache_events_t            icache_events_o,
+  input  logic                         enable_prefetching_i,
+  output icache_l0_events_t            icache_events_o,
 
-  input  logic [CFG.FETCH_AW-1:0]   in_addr_i,
-  input  logic                      in_valid_i,
-  output logic [CFG.FETCH_DW-1:0]   in_data_o,
-  output logic                      in_ready_o,
-  output logic                      in_error_o,
+  input  logic [CFG.FETCH_AW-1:0]      in_addr_i,
+  input  logic                         in_valid_i,
+  output logic [CFG.FETCH_DW-1:0]      in_data_o,
+  output logic                         in_ready_o,
+  output logic                         in_error_o,
 
   output logic [CFG.FETCH_AW-1:0]   out_req_addr_o,
   output logic [CFG.ID_WIDTH-1:0]   out_req_id_o,

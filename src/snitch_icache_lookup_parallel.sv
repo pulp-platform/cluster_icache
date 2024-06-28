@@ -5,8 +5,8 @@
 // Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
 
 /// An actual cache lookup.
-module snitch_icache_lookup_parallel #(
-  parameter snitch_icache_pkg::config_t CFG = '0,
+module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
+  parameter config_t CFG = '0,
   /// Configuration input types for SRAMs used in implementation.
   parameter type sram_cfg_data_t  = logic,
   parameter type sram_cfg_tag_t   = logic
@@ -16,6 +16,7 @@ module snitch_icache_lookup_parallel #(
 
   input  logic flush_valid_i,
   output logic flush_ready_o,
+  output icache_l1_events_t           icache_events_o,
 
   input  logic [CFG.FETCH_AW-1:0]    in_addr_i,
   input  logic [CFG.ID_WIDTH-1:0]    in_id_i,
@@ -249,6 +250,17 @@ module snitch_icache_lookup_parallel #(
   assign out_data_o  = data_q.data;
   assign out_error_o = data_q.error;
   assign out_valid_o = buffer_valid;
+
+  // ------------------
+  // Performance Events
+  // ------------------
+  always_comb begin
+    icache_events_o = '0;
+    icache_events_o.l1_miss = valid_q & ~data_d.hit;
+    icache_events_o.l1_hit = valid_q & data_d.hit;
+    icache_events_o.l1_stall = in_valid_i & ~in_ready_o;
+    icache_events_o.l1_handler_stall = out_valid_o & ~out_ready_i;
+  end
 
   // Assertions
   `include "common_cells/assertions.svh"
