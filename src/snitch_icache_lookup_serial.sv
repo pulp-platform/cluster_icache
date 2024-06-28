@@ -111,7 +111,7 @@ module snitch_icache_lookup_serial #(
     tag_wdata  = {1'b1, write_error_i, write_tag_i};
     tag_write  = 1'b0;
 
-    write_ready_o = 1'b0;
+    write_ready_o = 1'b1;
     in_ready_o    = 1'b0;
     req_valid     = 1'b0;
 
@@ -120,12 +120,12 @@ module snitch_icache_lookup_serial #(
       tag_enable = '1;
       tag_wdata  = '0;
       tag_write  = 1'b1;
+      write_ready_o = 1'b0;
     end else if (write_valid_i) begin
       // Write a refill request
       tag_addr      = write_addr_i;
       tag_enable    = $unsigned(1 << write_set_i);
       tag_write     = 1'b1;
-      write_ready_o = 1'b1;
     end else if (in_valid_i) begin
       // Check cache
       tag_enable = '1;

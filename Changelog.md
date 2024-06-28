@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+### Fixed
+- lookup_serial: Make `write_ready_o` independent of `write_valid_i`.
 
 ## 0.1.1 - 28.06.2024
 ### Added
