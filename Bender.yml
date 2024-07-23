@@ -26,6 +26,7 @@ sources:
   - src/riscv_instr_branch.sv
   - src/multi_accept_rr_arb.sv
   # Level 1
+  - src/l0_to_bypass.sv
   - src/snitch_axi_to_cache.sv
   - src/snitch_icache_l0.sv
   - src/snitch_icache_refill.sv
