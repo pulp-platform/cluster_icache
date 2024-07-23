@@ -21,7 +21,7 @@
 ///   FetchDataWidth = PRI_FETCH_DATA_WIDTH
 ///   AxiAddrWidth = AXI_ADDR
 ///   AxiDataWidth = AXI_DATA
-module pulp_icache_wrap #(
+module obi_icache_wrap #(
   /// Number of request (fetch) ports
   parameter int NumFetchPorts = -1,
   /// L0 Cache Line Count
