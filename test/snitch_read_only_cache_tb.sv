@@ -249,7 +249,7 @@ module snitch_read_only_cache_tb #(
     parameter int unsigned AxiIdWidth   = 5,
     parameter int unsigned LineWidth    = 256,
     parameter int unsigned LineCount    = 128,
-    parameter int unsigned SetCount     = 2
+    parameter int unsigned WayCount     = 2
 );
 
   localparam time ClkPeriod = 10ns;
@@ -362,7 +362,7 @@ module snitch_read_only_cache_tb #(
   snitch_read_only_cache #(
     .LineWidth    ( LineWidth      ),
     .LineCount    ( LineCount      ),
-    .SetCount     ( SetCount       ),
+    .WayCount     ( WayCount       ),
     .AxiAddrWidth ( AxiAddrWidth   ),
     .AxiDataWidth ( AxiDataWidth   ),
     .AxiIdWidth   ( AxiInIdWidth   ),
