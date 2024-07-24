@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Add statistics signals output for shared L1.
+- Add OBI-request-compatible instruction cache variant.
 
 ## 0.1.1 - 28.06.2024
 ### Added
