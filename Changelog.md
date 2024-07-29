@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - lookup_serial: Make `write_ready_o` independent of `write_valid_i`.
 - Fix L0 testbench.
-- Remove unnused and duplicate `icache_request` class in `snitch_read_only_cache_tb`, which caused issues when compiling with VCS.
+- Remove unused and duplicate `icache_request` class in `snitch_read_only_cache_tb`, which caused issues when compiling with VCS.
 
 ### Changed
 - Rename `SET_COUNT` to `WAY_COUNT` to correct terminology, as it reflects the number of ways in a set.
