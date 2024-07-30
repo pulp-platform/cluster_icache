@@ -58,6 +58,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   logic [CFG.L0_LINE_COUNT-1:0] evict_strb;
   logic [CFG.L0_LINE_COUNT-1:0] flush_strb;
   logic [CFG.L0_LINE_COUNT-1:0] validate_strb;
+  logic [CFG.L0_LINE_COUNT-1:0] next_evict;
 
   typedef struct packed {
     logic vld;
@@ -210,6 +211,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     // Update plru on hit and on miss eviction, prefetch only once fetch hits
     assign hit_plru = hit | (evict_because_miss ? evict_strb : '0);
     assign evict_strb = evict_req ? evict_plru : '0;
+    assign next_evict = evict_plru;
 
     plru_tree #(
       .ENTRIES(CFG.L0_LINE_COUNT)
@@ -221,6 +223,8 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     );
 
   end else begin : gen_round_robin
+
+    assign next_evict = '0;
 
     logic [$clog2(CFG.L0_LINE_COUNT)-1:0] cnt_d, cnt_q;
 
@@ -310,10 +314,12 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   // Pre-fetching
   // -------------
   // Generate a prefetch request if the cache hits and we haven't
-  // pre-fetched the line yet and there is no other refill in progress.
+  // pre-fetched the line yet and there is no other refill in progress
+  // and the current hit won't be evicted.
   assign prefetcher_out.vld = enable_prefetching_i &
                               hit_any & ~hit_prefetch_any &
-                              hit_early_is_onehot & ~pending_refill_q;
+                              hit_early_is_onehot & ~pending_refill_q &
+                              ~|(next_evict & hit_early);
 
   localparam int unsigned FetchPkts = CFG.LINE_WIDTH/32;
   logic [FetchPkts-1:0] is_branch_taken;
