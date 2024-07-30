@@ -92,11 +92,10 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
   logic                       req_valid, req_ready;
   logic                       req_handshake;
 
-  logic [CFG.COUNT_ALIGN-1:0]          tag_addr;
-  logic [CFG.SET_COUNT-1:0]            tag_enable;
-  logic [CFG.TAG_WIDTH+1:0]            tag_wdata;
-  logic [CFG.TAG_WIDTH+1+TagParity:0] tag_wdata_prot, tag_rdata [CFG.SET_COUNT];
-  logic                                tag_write;
+  logic [CFG.COUNT_ALIGN-1:0]         tag_addr;
+  logic [CFG.SET_COUNT-1:0]           tag_enable;
+  logic [CFG.TAG_WIDTH+1+TagParity:0] tag_wdata, tag_rdata [CFG.SET_COUNT];
+  logic                               tag_write;
 
   tag_req_t                   tag_req_d, tag_req_q;
   tag_rsp_t                   tag_rsp_s, tag_rsp_d, tag_rsp_q, tag_rsp;
@@ -135,6 +134,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
       end else if (in_valid_i) begin
         // read phase: write tag not used
       end
+      tag_wdata[CFG.TAG_WIDTH+2] = tag_parity_bit;
     end
   end else begin : gen_no_tag_parity
     assign tag_parity_bit = '0;
@@ -143,10 +143,10 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
   assign data_fault_valid = (CFG.L1_DATA_PARITY_BITS > 0) ? data_parity_inv_q : '0;
 
   always_comb begin
-    tag_addr   = in_addr_i[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
-    tag_enable = '0;
-    tag_wdata  = {1'b1, write_error_i, write_tag_i};
-    tag_write  = 1'b0;
+    tag_addr                     = in_addr_i[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
+    tag_enable                   = '0;
+    tag_wdata[CFG.TAG_WIDTH+1:0] = {1'b1, write_error_i, write_tag_i};
+    tag_write                    = 1'b0;
 
     write_ready_o = 1'b1;
     in_ready_o    = 1'b0;
@@ -190,13 +190,11 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     end
   end
 
-  assign tag_wdata_prot = {tag_parity_bit, tag_wdata};
-
   // Instantiate the tag sets.
   if (CFG.L1_TAG_SCM) begin : gen_scm
     for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : g_sets
       register_file_1r_1w #(
-        .ADDR_WIDTH ($clog2(CFG.LINE_COUNT)    ),
+        .ADDR_WIDTH ($clog2(CFG.LINE_COUNT)   ),
         .DATA_WIDTH (CFG.TAG_WIDTH+2+TagParity)
       ) i_tag (
         .clk         ( clk_i                       ),
@@ -208,7 +206,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
         .ReadData    ( tag_rdata[i]                ),
         .WriteEnable ( tag_enable[i] && tag_write  ),
         .WriteAddr   ( tag_addr                    ),
-        .WriteData   ( tag_wdata_prot              )
+        .WriteData   ( tag_wdata                   )
       );
     end
   end else begin : gen_sram
@@ -220,9 +218,9 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     tc_sram_impl #(
       .DataWidth ( (CFG.TAG_WIDTH+2+TagParity) * CFG.SET_COUNT ),
       .ByteWidth ( CFG.TAG_WIDTH+2+TagParity                   ),
-      .NumWords  ( CFG.LINE_COUNT                               ),
-      .NumPorts  ( 1                                            ),
-      .impl_in_t ( sram_cfg_tag_t                               )
+      .NumWords  ( CFG.LINE_COUNT                              ),
+      .NumPorts  ( 1                                           ),
+      .impl_in_t ( sram_cfg_tag_t                              )
     ) i_tag (
       .clk_i   ( clk_i                      ),
       .rst_ni  ( rst_ni                     ),
@@ -231,7 +229,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
       .req_i   ( |tag_enable                ),
       .we_i    ( tag_write                  ),
       .addr_i  ( tag_addr                   ),
-      .wdata_i ( {CFG.SET_COUNT{tag_wdata_prot}} ),
+      .wdata_i ( {CFG.SET_COUNT{tag_wdata}} ),
       .be_i    ( tag_enable                 ),
       .rdata_o ( tag_rdata_flat             )
     );
