@@ -86,8 +86,9 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
 
   logic evict_because_miss, evict_because_prefetch;
 
-  logic data_parity_error;
+  logic [CFG.L0_LINE_COUNT-1:0] data_parity_error_vect;
   logic [CFG.L0_LINE_COUNT-1:0] tag_parity_error_vect;
+  logic [CFG.L0_LINE_COUNT-1:0] invalid_tag_parity_error_vect;
 
   typedef struct packed {
     logic                    is_prefetch;
@@ -122,6 +123,9 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
       // Compute a parity error vector comparing the expected parity bit and the current one.
       assign tag_parity_error_vect[i] = (exp_tag_parity[i] != tag[i].tag[CFG.L0_TAG_WIDTH]) &&
                                         tag[i].vld;
+      // Re-flush invalid lines with matching parity info (unless currently being refilled)
+      assign invalid_tag_parity_error_vect[i] = ~tag[i].vld && ~pending_line_refill_q[i] &&
+                                               (exp_tag_parity[i] == tag[i].tag[CFG.L0_TAG_WIDTH]);
       assign hit_early[i] = tag[i].vld &
         (tag[i].tag[CFG.L0_EARLY_TAG_WIDTH-1:0] == addr_tag[CFG.L0_EARLY_TAG_WIDTH-1:0]);
       // The two signals calculate the same.
@@ -136,7 +140,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
       assign hit_prefetch[i] = tag[i].vld & (tag[i].tag[CFG.L0_TAG_WIDTH-1:0] == addr_tag_prefetch);
     end
 
-    assign hit_any = |hit && !data_parity_error;
+    assign hit_any = |(hit && ~data_parity_error_vect);
   end else begin : gen_tag_cmp_standard
 
     for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_cmp_fetch
@@ -157,6 +161,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     assign hit_any = |hit;
 
     assign tag_parity_error_vect = '0;
+    assign invalid_tag_parity_error_vect = '0;
   end
 
   assign hit_prefetch_any = |hit_prefetch;
@@ -195,6 +200,8 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
           end
           if (flush_strb[i]) begin
             tag[i].vld <= 1'b0;
+            // purposefully fail parity to limit error accumulation
+            tag[i].tag <= {^tag[i].tag[CFG.L0_TAG_WIDTH-1:0], tag[i].tag[CFG.L0_TAG_WIDTH-1:0]};
           end
         end
       end
@@ -272,8 +279,6 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   // ----
   // we hit in the cache and there was a unique hit.
 
-  logic [CFG.L0_LINE_COUNT-1:0] data_parity_error_vect;
-
   if (CFG.L0_DATA_PARITY_BITS > 0) begin : gen_data_parity_error
     logic [CFG.L0_LINE_COUNT-1:0][CFG.L0_DATA_PARITY_BITS-1:0] exp_data_parity;
     // For every line, we compute the expected parity for every block
@@ -286,9 +291,6 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
       assign data_parity_error_vect[i] =
         (exp_data_parity[i] != data[i][CFG.LINE_WIDTH+:CFG.L0_DATA_PARITY_BITS]) && tag[i].vld;
     end
-    // Check whether the currently selected data has an error
-    assign data_parity_error =
-      data_parity_error_vect >> in_addr_i[CFG.LINE_ALIGN-1:CFG.FETCH_ALIGN];
   end else begin : gen_data_parity_norel
     assign data_parity_error_vect = '0;
     assign data_parity_error = '0;
@@ -374,6 +376,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     end
     flush_strb |= tag_parity_error_vect;
     flush_strb |= data_parity_error_vect;
+    flush_strb |= invalid_tag_parity_error_vect;
     if (flush_valid_i) flush_strb = '1;
   end
 
@@ -381,11 +384,11 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
 `ifdef TARGET_SIMULATION
   always @ (posedge clk_i) begin
     if (tag_parity_error_vect != '0 && data_parity_error_vect != '0)
-      $display("%t [l0cache]: tag and data fault: flushing tags: %b",$time, flush_strb);
-    else if (tag_parity_error_vect != '0)
-      $display("%t [l0cache]: tag fault: flushing tags: %b",$time, flush_strb);
+      $display("%t [l0cache%d]: tag and data fault: flushing tags: %b",$time, L0_ID, flush_strb);
+    else if (tag_parity_error_vect != '0 || invalid_tag_parity_error_vect != 0)
+      $display("%t [l0cache%d]: tag fault: flushing tags: %b",$time, L0_ID, flush_strb);
     else if (data_parity_error_vect != '0)
-      $display("%t [l0cache]: data fault: flushing tags: %b",$time, flush_strb);
+      $display("%t [l0cache%d]: data fault: flushing tags: %b",$time, L0_ID, flush_strb);
   end
 `endif
 
@@ -561,8 +564,8 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     icache_events_o.l0_prefetch = prefetcher_out.vld;
     icache_events_o.l0_double_hit = hit_any & ~hit_early_is_onehot & in_valid_i;
     icache_events_o.l0_stall = !in_ready_o & in_valid_i;
-    icache_events_o.l0_tag_parity_error = in_valid_i & |tag_parity_error_vect;
-    icache_events_o.l0_data_parity_error = in_valid_i & data_parity_error;
+    icache_events_o.l0_tag_parity_error = |tag_parity_error_vect & |invalid_tag_parity_error_vect;
+    icache_events_o.l0_data_parity_error = |data_parity_error_vect;
   end
 
   // ----------
