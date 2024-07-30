@@ -297,7 +297,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     assign data_parity_error = '0;
   end
 
-  assign in_ready_o = hit_any;
+  assign in_ready_o = hit_any & ~|(hit_early & (tag_parity_error_vect | data_parity_error_vect));
 
   logic [CFG.LINE_WIDTH-1:0] ins_data;
   always_comb begin : data_muxer
