@@ -27,7 +27,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
 
   output logic [CFG.FETCH_AW-1:0]    out_addr_o,
   output logic [CFG.ID_WIDTH-1:0]    out_id_o,
-  output logic [CFG.SET_ALIGN-1:0]   out_set_o,
+  output logic [CFG.WAY_ALIGN-1:0]   out_way_o,
   output logic                       out_hit_o,
   output logic [CFG.LINE_WIDTH-1:0]  out_data_o,
   output logic                       out_error_o,
@@ -35,7 +35,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
   input  logic                       out_ready_i,
 
   input  logic [CFG.COUNT_ALIGN-1:0] write_addr_i,
-  input  logic [CFG.SET_ALIGN-1:0]   write_set_i,
+  input  logic [CFG.WAY_ALIGN-1:0]   write_way_i,
   input  logic [CFG.LINE_WIDTH-1:0]  write_data_i,
   input  logic [CFG.TAG_WIDTH-1:0]   write_tag_i,
   input  logic                       write_error_i,
@@ -77,7 +77,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
   } tag_req_t;
 
   typedef struct packed {
-    logic [CFG.SET_ALIGN-1:0] cset;
+    logic [CFG.WAY_ALIGN-1:0] cway;
     logic                     hit;
     logic                     error;
   } tag_rsp_t;
@@ -125,7 +125,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     end else if (write_valid_i) begin
       // Write a refill request
       tag_addr      = write_addr_i;
-      tag_enable    = $unsigned(1 << write_set_i);
+      tag_enable    = $unsigned(1 << write_way_i);
       tag_write     = 1'b1;
     end else if (in_valid_i) begin
       // Check cache
@@ -136,9 +136,9 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     end
   end
 
-  // Instantiate the tag sets.
+  // Instantiate the tag ways.
   if (CFG.L1_TAG_SCM) begin : gen_scm
-    for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_sets
+    for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_ways
       register_file_1r_1w #(
         .ADDR_WIDTH ($clog2(CFG.LINE_COUNT)),
         .DATA_WIDTH (CFG.TAG_WIDTH+2       )
@@ -163,7 +163,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     end
   end else begin : gen_sram
     logic [CFG.WAY_COUNT*(CFG.TAG_WIDTH+2)-1:0] tag_rdata_flat;
-    for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_sets_rdata
+    for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_ways_rdata
       assign tag_rdata[i] = tag_rdata_flat[i*(CFG.TAG_WIDTH+2)+:CFG.TAG_WIDTH+2];
     end
     tc_sram_impl #(
@@ -186,7 +186,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     );
   end
 
-  // Determine which set hit
+  // Determine which way hit
   logic [CFG.WAY_COUNT-1:0] errors;
   assign required_tag = tag_req_q.addr[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
   for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : gen_line_hit
@@ -199,7 +199,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
 
   lzc #(.WIDTH(CFG.WAY_COUNT)) i_lzc (
     .in_i     ( line_hit       ),
-    .cnt_o    ( tag_rsp_s.cset ),
+    .cnt_o    ( tag_rsp_s.cway ),
     .empty_o  (                )
   );
 
@@ -235,7 +235,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
   typedef struct packed {
     logic [CFG.FETCH_AW-1:0]  addr;
     logic [CFG.ID_WIDTH-1:0]  id;
-    logic [CFG.SET_ALIGN-1:0] cset;
+    logic [CFG.WAY_ALIGN-1:0] cway;
     logic                     hit;
     logic                     error;
   } data_req_t;
@@ -253,18 +253,18 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
 
   logic                     refill_hit_d, refill_hit_q;
   data_rsp_t                refill_wdata_q, proper_rdata;
-  logic [CFG.SET_ALIGN-1:0] write_set_q;
+  logic [CFG.WAY_ALIGN-1:0] write_way_q;
   logic                     write_error_q;
 
   // Connect tag stage response to data stage request
   assign data_req_d.addr  = tag_req_q.addr;
   assign data_req_d.id    = tag_req_q.id;
-  assign data_req_d.cset  = tag_rsp.cset;
+  assign data_req_d.cway  = tag_rsp.cway;
   assign data_req_d.hit   = tag_rsp.hit;
   assign data_req_d.error = tag_rsp.error;
 
-  assign lookup_addr = {tag_rsp.cset, tag_req_q.addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN]};
-  assign write_addr  = {write_set_i, write_addr_i};
+  assign lookup_addr = {tag_rsp.cway, tag_req_q.addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN]};
+  assign write_addr  = {write_way_i, write_addr_i};
 
   // Data bank port mux
   always_comb begin
@@ -323,13 +323,13 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
                         write_addr_i == data_req_d.addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
   `FFL(refill_hit_q, refill_hit_d, tag_valid && tag_ready, '0, clk_i, rst_ni)
   `FFL(refill_wdata_q, write_data_i, refill_hit_d, '0, clk_i, rst_ni)
-  `FFL(write_set_q, write_set_i, refill_hit_d, '0, clk_i, rst_ni)
+  `FFL(write_way_q, write_way_i, refill_hit_d, '0, clk_i, rst_ni)
   `FFL(write_error_q, write_error_i, refill_hit_d, '0, clk_i, rst_ni)
 
   // Generate the remaining output signals.
   assign out_addr_o  = data_req_q.addr;
   assign out_id_o    = data_req_q.id;
-  assign out_set_o   = refill_hit_q && !data_req_q.hit ? write_set_q : data_req_q.cset;
+  assign out_way_o   = refill_hit_q && !data_req_q.hit ? write_way_q : data_req_q.cway;
   assign out_hit_o   = refill_hit_q || data_req_q.hit;
   assign out_error_o = refill_hit_q && !data_req_q.hit ? write_error_q : data_req_q.error;
   assign out_valid_o = data_valid;
