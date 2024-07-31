@@ -92,10 +92,11 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
   logic                       req_valid, req_ready;
   logic                       req_handshake;
 
-  logic [CFG.COUNT_ALIGN-1:0]         tag_addr;
-  logic [CFG.SET_COUNT-1:0]           tag_enable;
-  logic [CFG.TAG_WIDTH+1+TagParity:0] tag_wdata, tag_rdata [CFG.SET_COUNT];
-  logic                               tag_write;
+  logic [CFG.COUNT_ALIGN-1:0]                            tag_addr;
+  logic [CFG.SET_COUNT-1:0]                              tag_enable;
+  logic                    [CFG.TAG_WIDTH+1+TagParity:0] tag_wdata;
+  logic [CFG.SET_COUNT-1:0][CFG.TAG_WIDTH+1+TagParity:0] tag_rdata;
+  logic                                                  tag_write;
 
   tag_req_t                   tag_req_d, tag_req_q;
   tag_rsp_t                   tag_rsp_s, tag_rsp_d, tag_rsp_q, tag_rsp;
