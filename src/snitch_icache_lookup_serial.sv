@@ -162,7 +162,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
       tag_write                    = 1'b1;
       write_ready_o                = 1'b0;
     end else if (data_fault_valid) begin // Only if data has parity
-      tag_addr                     = data_parity_inv_q.addr >> CFG.LINE_ALIGN;
+      tag_addr                     = data_parity_inv_q.addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
       tag_enable                   = $unsigned(1 << data_parity_inv_q.cset);
       tag_wdata[CFG.TAG_WIDTH+1:0] = '0;
       tag_write                    = 1'b1;
