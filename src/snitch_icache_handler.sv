@@ -14,7 +14,7 @@ module snitch_icache_handler #(
 
   input  logic [CFG.FETCH_AW-1:0]    in_req_addr_i,
   input  logic [CFG.ID_WIDTH-1:0]    in_req_id_i,
-  input  logic [CFG.SET_ALIGN-1:0]   in_req_set_i,
+  input  logic [CFG.WAY_ALIGN-1:0]   in_req_way_i,
   input  logic                       in_req_hit_i,
   input  logic [CFG.LINE_WIDTH-1:0]  in_req_data_i,
   input  logic                       in_req_error_i,
@@ -28,7 +28,7 @@ module snitch_icache_handler #(
   input  logic                       in_rsp_ready_i,
 
   output logic [CFG.COUNT_ALIGN-1:0] write_addr_o,
-  output logic [CFG.SET_ALIGN-1:0]   write_set_o,
+  output logic [CFG.WAY_ALIGN-1:0]   write_way_o,
   output logic [CFG.LINE_WIDTH-1:0]  write_data_o,
   output logic [CFG.TAG_WIDTH-1:0]   write_tag_o,
   output logic                       write_error_o,
@@ -63,7 +63,7 @@ module snitch_icache_handler #(
   } pending_t;
   pending_t pending_q [CFG.PENDING_COUNT];
   logic [CFG.PENDING_COUNT-1:0] pending_clr;
-  logic [CFG.PENDING_COUNT-1:0] pending_set;
+  logic [CFG.PENDING_COUNT-1:0] pending_way;
 
   logic [CFG.PENDING_IW-1:0] push_index;
   logic                      push_init;   // reset the idmask instead of or'ing
@@ -86,15 +86,15 @@ module snitch_icache_handler #(
     always_ff @(posedge clk_i, negedge rst_ni) begin
       if (!rst_ni)
         pending_q[i].valid <= 0;
-      else if (pending_set[i] || pending_clr[i])
-        pending_q[i].valid <= pending_set[i] && ~pending_clr[i];
+      else if (pending_way[i] || pending_clr[i])
+        pending_q[i].valid <= pending_way[i] && ~pending_clr[i];
     end
 
     always_ff @(posedge clk_i, negedge rst_ni) begin
       if (!rst_ni) begin
         pending_q[i].addr <= '0;
         pending_q[i].idmask <= '0;
-      end else if (pending_set[i]) begin
+      end else if (pending_way[i]) begin
         pending_q[i].addr <= push_addr;
         pending_q[i].idmask <= push_init ? push_idmask : push_idmask | pending_q[i].idmask;
       end else if (in_rsp_valid_o &&
@@ -111,7 +111,7 @@ module snitch_icache_handler #(
   // the same time, the pop is updated with the push information and the push
   // discarded.
   always_comb begin : p_pushpop_bypass
-    pending_set = push_enable ? 'b1 << push_index : '0;
+    pending_way = push_enable ? 'b1 << push_index : '0;
     pending_clr = pop_enable ? 'b1 << pop_index : '0;
     pop_addr = pending_q[pop_index].addr;
     pop_idmask = pending_q[pop_index].idmask;
@@ -246,10 +246,12 @@ module snitch_icache_handler #(
   // replacement at random. Note that we assume that the entire cache is full,
   // so no empty cache lines are available. This is the common case since we
   // do not support flushing of the cache.
-  logic [CFG.SET_ALIGN-1:0] evict_index;
+  logic [CFG.WAY_ALIGN-1:0] evict_index;
   logic evict_enable;
 
-  snitch_icache_lfsr #(CFG.SET_ALIGN) i_evict_lfsr (
+  snitch_icache_lfsr #(
+    .N ( CFG.WAY_ALIGN)
+  ) i_evict_lfsr (
     .clk_i    ( clk_i        ),
     .rst_ni   ( rst_ni       ),
     .value_o  ( evict_index  ),
@@ -277,7 +279,7 @@ module snitch_icache_handler #(
     pop_enable = 0;
 
     write_addr_o  = pop_addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
-    write_set_o   = evict_index;
+    write_way_o   = evict_index;
     write_data_o  = out_rsp_data_i;
     write_tag_o   = pop_addr[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
     write_error_o = out_rsp_error_i;

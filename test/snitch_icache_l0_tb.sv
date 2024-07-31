@@ -96,7 +96,7 @@ module snitch_icache_l0_tb #(
       FILL_ALIGN:  $clog2(FILL_DW/8),
       LINE_ALIGN:  $clog2(LINE_WIDTH/8),
       COUNT_ALIGN: $clog2(LINE_COUNT),
-      SET_ALIGN:   $clog2(WAY_COUNT),
+      WAY_ALIGN:   $clog2(WAY_COUNT),
       TAG_WIDTH:   FETCH_AW - $clog2(LINE_WIDTH/8) - $clog2(LINE_COUNT) + 1,
       L0_TAG_WIDTH: FETCH_AW - $clog2(LINE_WIDTH/8),
       L0_EARLY_TAG_WIDTH:

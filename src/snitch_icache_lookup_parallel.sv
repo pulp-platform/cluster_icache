@@ -25,7 +25,7 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
 
   output logic [CFG.FETCH_AW-1:0]    out_addr_o,
   output logic [CFG.ID_WIDTH-1:0]    out_id_o,
-  output logic [CFG.SET_ALIGN-1:0]   out_set_o,
+  output logic [CFG.WAY_ALIGN-1:0]   out_way_o,
   output logic                       out_hit_o,
   output logic [CFG.LINE_WIDTH-1:0]  out_data_o,
   output logic                       out_error_o,
@@ -33,7 +33,7 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
   input  logic                       out_ready_i,
 
   input  logic [CFG.COUNT_ALIGN-1:0] write_addr_i,
-  input  logic [CFG.SET_ALIGN-1:0]   write_set_i,
+  input  logic [CFG.WAY_ALIGN-1:0]   write_way_i,
   input  logic [CFG.LINE_WIDTH-1:0]  write_data_i,
   input  logic [CFG.TAG_WIDTH-1:0]   write_tag_i,
   input  logic                       write_error_i,
@@ -59,7 +59,7 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
   logic [CFG.COUNT_ALIGN:0]   init_count_q;
 
   typedef struct packed {
-    logic [CFG.SET_ALIGN-1:0]   cset;
+    logic [CFG.WAY_ALIGN-1:0]   cway;
     logic                       hit;
     logic [CFG.LINE_WIDTH-1:0]  data;
     logic                       error;
@@ -87,7 +87,7 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
       ram_wtag   = '0;
     end else  if (write_valid_i) begin
       ram_addr   = write_addr_i;
-      ram_enable = CFG.WAY_COUNT > 1 ? $unsigned(1 << write_set_i) : 1'b1;
+      ram_enable = CFG.WAY_COUNT > 1 ? $unsigned(1 << write_way_i) : 1'b1;
       ram_write  = 1'b1;
       write_ready_o = 1'b1;
     end else if (out_ready_i) begin
@@ -144,8 +144,8 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
     end
   end
 
-  // Instantiate the RAM sets.
-  for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_sets
+  // Instantiate the RAM ways.
+  for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_ways
     tc_sram_impl #(
       .NumWords (CFG.LINE_COUNT),
       .DataWidth (CFG.TAG_WIDTH+2),
@@ -214,7 +214,7 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
 
   lzc #(.WIDTH(CFG.WAY_COUNT)) i_lzc (
     .in_i     ( line_hit    ),
-    .cnt_o    ( data_d.cset ),
+    .cnt_o    ( data_d.cway ),
     .empty_o  (             )
   );
 
@@ -245,7 +245,7 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
   // Generate the output signals.
   assign out_addr_o  = addr_q;
   assign out_id_o    = id_q;
-  assign out_set_o   = data_q.cset;
+  assign out_way_o   = data_q.cway;
   assign out_hit_o   = data_q.hit;
   assign out_data_o  = data_q.data;
   assign out_error_o = data_q.error;

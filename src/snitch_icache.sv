@@ -14,7 +14,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
   parameter int unsigned L0_LINE_COUNT = -1,
   /// Cache Line Width
   parameter int unsigned LINE_WIDTH = -1,
-  /// The number of cache lines per set. Power of two; >= 2.
+  /// The number of cache lines per way. Power of two; >= 2.
   parameter int unsigned LINE_COUNT = -1,
   /// The set associativity of the cache. Power of two; >= 1.
   parameter int unsigned WAY_COUNT = 1,
@@ -104,7 +104,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
     FILL_ALIGN:  $clog2(FILL_DW/8),
     LINE_ALIGN:  $clog2(LINE_WIDTH/8),
     COUNT_ALIGN: $clog2(LINE_COUNT),
-    SET_ALIGN:   $clog2(WAY_COUNT),
+    WAY_ALIGN:   $clog2(WAY_COUNT),
     TAG_WIDTH:   FETCH_AW - $clog2(LINE_WIDTH/8) - $clog2(LINE_COUNT),
     L0_TAG_WIDTH: FETCH_AW - $clog2(LINE_WIDTH/8),
     L0_EARLY_TAG_WIDTH:
@@ -120,7 +120,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
     assert(L0_LINE_COUNT > 0);
     assert(LINE_WIDTH > 0);
     assert(LINE_COUNT > 1);
-    assert(WAY_COUNT >= 2) else $warning("Only >= 2 sets are supported");
+    assert(WAY_COUNT >= 2) else $warning("Only >= 2 ways are supported");
     assert(FETCH_AW > 0);
     assert(FETCH_DW > 0);
     assert(FILL_AW > 0);
@@ -484,7 +484,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
   // The lookup module contains the actual cache RAMs and performs lookups.
   logic [CFG.FETCH_AW-1:0]    lookup_addr  ;
   logic [CFG.ID_WIDTH-1:0]    lookup_id    ;
-  logic [CFG.SET_ALIGN-1:0]   lookup_set   ;
+  logic [CFG.WAY_ALIGN-1:0]   lookup_way   ;
   logic                       lookup_hit   ;
   logic [CFG.LINE_WIDTH-1:0]  lookup_data  ;
   logic                       lookup_error ;
@@ -492,7 +492,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
   logic                       lookup_ready ;
 
   logic [CFG.COUNT_ALIGN-1:0] write_addr  ;
-  logic [CFG.SET_ALIGN-1:0]   write_set   ;
+  logic [CFG.WAY_ALIGN-1:0]   write_way   ;
   logic [CFG.LINE_WIDTH-1:0]  write_data  ;
   logic [CFG.TAG_WIDTH-1:0]   write_tag   ;
   logic                       write_error ;
@@ -546,7 +546,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
 
       .out_addr_o      ( lookup_addr               ),
       .out_id_o        ( lookup_id                 ),
-      .out_set_o       ( lookup_set                ),
+      .out_way_o       ( lookup_way                ),
       .out_hit_o       ( lookup_hit                ),
       .out_data_o      ( lookup_data               ),
       .out_error_o     ( lookup_error              ),
@@ -554,7 +554,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
       .out_ready_i     ( lookup_ready              ),
 
       .write_addr_i    ( write_addr                ),
-      .write_set_i     ( write_set                 ),
+      .write_way_i     ( write_way                 ),
       .write_data_i    ( write_data                ),
       .write_tag_i     ( write_tag                 ),
       .write_error_i   ( write_error               ),
@@ -585,7 +585,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
 
       .out_addr_o      ( lookup_addr               ),
       .out_id_o        ( lookup_id                 ),
-      .out_set_o       ( lookup_set                ),
+      .out_way_o       ( lookup_way                ),
       .out_hit_o       ( lookup_hit                ),
       .out_data_o      ( lookup_data               ),
       .out_error_o     ( lookup_error              ),
@@ -593,7 +593,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
       .out_ready_i     ( lookup_ready              ),
 
       .write_addr_i    ( write_addr                ),
-      .write_set_i     ( write_set                 ),
+      .write_way_i     ( write_way                 ),
       .write_data_i    ( write_data                ),
       .write_tag_i     ( write_tag                 ),
       .write_error_i   ( write_error               ),
@@ -615,7 +615,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
 
     .in_req_addr_i   ( lookup_addr        ),
     .in_req_id_i     ( lookup_id          ),
-    .in_req_set_i    ( lookup_set         ),
+    .in_req_way_i    ( lookup_way         ),
     .in_req_hit_i    ( lookup_hit         ),
     .in_req_data_i   ( lookup_data        ),
     .in_req_error_i  ( lookup_error       ),
@@ -629,7 +629,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
     .in_rsp_ready_i  ( prefetch_lookup_rsp_ready ),
 
     .write_addr_o    ( write_addr         ),
-    .write_set_o     ( write_set          ),
+    .write_way_o     ( write_way          ),
     .write_data_o    ( write_data         ),
     .write_tag_o     ( write_tag          ),
     .write_error_o   ( write_error        ),
