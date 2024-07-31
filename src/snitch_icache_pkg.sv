@@ -37,6 +37,8 @@ package snitch_icache_pkg;
     bit EARLY_LATCH;
     bit BUFFER_LOOKUP;
     bit GUARANTEE_ORDERING;
+    bit L0_PLRU;
+    bit L1_PLRU;
 
     // Derived values.
     int unsigned FETCH_ALIGN;
