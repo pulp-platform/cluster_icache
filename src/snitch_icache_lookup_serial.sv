@@ -318,9 +318,10 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
   assign out_data_o = tag_handshake ? proper_rdata : data_rsp_q;
 
   // Check immediate refill for possible match
-  assign refill_hit_d = write_valid_i &&
-                        write_tag_i == required_tag &&
-                        write_addr_i == data_req_d.addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
+  assign refill_hit_d = write_valid_i &&                                               // Writing
+                        write_set_i == tag_rsp.cset &&                                 // Match set
+                        write_tag_i == required_tag &&                                 // Match tag
+                        write_addr_i == data_req_d.addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN]; // "line
   `FFL(refill_hit_q, refill_hit_d, tag_valid && tag_ready, '0, clk_i, rst_ni)
   `FFL(refill_wdata_q, write_data_i, refill_hit_d, '0, clk_i, rst_ni)
   `FFL(write_set_q, write_set_i, refill_hit_d, '0, clk_i, rst_ni)
