@@ -408,7 +408,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
 
     assign data_parity_inv_d.parity_error = |data_parity_error;
     assign data_parity_inv_d.addr = data_req_q.addr;
-    assign data_parity_inv_d.cset = data_req_q.id;
+    assign data_parity_inv_d.cset = data_req_q.cset;
   end else begin : gen_no_data_parity
     assign data_parity_inv_d = '0;
   end
