@@ -22,10 +22,12 @@ sources:
   # package. Files in level 1 only depend on files in level 0, files in level 2 on files in
   # levels 1 and 0, etc. Files within a level are ordered alphabetically.
   # Level 0
+  - src/axi_burst_splitter_table.sv
   - src/snitch_icache_pkg.sv
   - src/riscv_instr_branch.sv
   - src/multi_accept_rr_arb.sv
   # Level 1
+  - src/l0_to_bypass.sv
   - src/snitch_axi_to_cache.sv
   - src/snitch_icache_l0.sv
   - src/snitch_icache_refill.sv
@@ -37,6 +39,8 @@ sources:
   # Level 3
   - src/snitch_icache.sv
   - src/snitch_read_only_cache.sv
+  # Level 4
+  - src/obi_icache_wrap.sv
   - target: test
     files:
       - test/snitch_icache_l0_tb.sv
