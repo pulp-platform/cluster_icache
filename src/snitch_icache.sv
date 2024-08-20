@@ -31,16 +31,16 @@ module snitch_icache import snitch_icache_pkg::*; #(
   /// Merge L0-L1 fetches if requesting the same address
   parameter bit MERGE_FETCHES = 1'b0,
   /// Serialize the L1 lookup (parallel tag/data lookup by default)
-  parameter bit SERIAL_LOOKUP = 0,
+  parameter bit SERIAL_LOOKUP = 1'b0,
   /// Replace the L1 tag banks with latch-based SCM.
-  parameter bit L1_TAG_SCM = 0,
+  parameter bit L1_TAG_SCM = 1'b0,
   /// Number of pending response beats for the L1 cache.
   parameter int unsigned NUM_AXI_OUTSTANDING = 2,
   /// This reduces area impact at the cost of
   /// increased hassle of having latches in
   /// the design.
   /// i_snitch_icache/gen_prefetcher*i_snitch_icache_l0/data*/Q
-  parameter bit EARLY_LATCH = 0,
+  parameter bit EARLY_LATCH = 1'b0,
   /// Tag width of the data determining logic, this can reduce the
   /// the critical path into the L0 cache when small. The trade-off
   /// is a higher miss-rate in case the smaller tag matches more

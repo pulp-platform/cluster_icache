@@ -10,13 +10,13 @@
 ///   Unsupported: different line width, banks in L1, L0 not fully associative
 ///   [SH_FETCH_DATA_WIDTH == Cache line width]
 ///   [SH_NB_BANKS == 1]
-///   [PRI_NB_WAYS == L0_LINE_COUNT] -> here fully associative
+///   [PRI_NB_WAYS == L0LineCount] -> here fully associative
 ///   [SH_CACHE_LINE == PRI_CACHE_LINE]
 ///   NumFetchPorts = NB_CORES
-///   L0_LINE_COUNT = PRI_CACHE_SIZE/(bytes per line)
-///   LINE_WIDTH = X_CACHE_LINE * DATA_WIDTH -> Use >= 32*NB_CORES for optimal performance
-///   LINE_COUNT = SH_CACHE_SIZE/(bytes per line)
-///   WAY_COUNT = SH_NB_WAYS
+///   L0LineCount = PRI_CACHE_SIZE/(bytes per line)
+///   LineWidth = X_CACHE_LINE * DATA_WIDTH -> Use >= 32*NB_CORES for optimal performance
+///   LineCount = SH_CACHE_SIZE/(bytes per line)
+///   WayCount = SH_NB_WAYS
 ///   FetchAddrWidth = FETCH_ADDR_WIDTH
 ///   FetchDataWidth = PRI_FETCH_DATA_WIDTH
 ///   AxiAddrWidth = AXI_ADDR
@@ -25,23 +25,47 @@ module obi_icache_wrap #(
   /// Number of request (fetch) ports
   parameter int NumFetchPorts = -1,
   /// L0 Cache Line Count
-  parameter int L0_LINE_COUNT = -1,
+  parameter int L0LineCount = -1,
   /// Cache Line Width
   /// For optimal performance, use >= 32*NumFetchPorts to allow execution of 32-bit instructions
   /// for each core before requiring another L0-L1 fetch.
-  parameter int LINE_WIDTH = -1,
-  /// The number of cache lines per set. Power of two; >= 2.
-  parameter int LINE_COUNT = -1,
+  parameter int LineWidth = -1,
+  /// The number of cache lines per way. Power of two; >= 2.
+  parameter int LineCount = -1,
   /// The set associativity of the cache. Power of two; >= 1.
-  parameter int WAY_COUNT = 1,
+  parameter int WayCount = 1,
   /// Fetch interface address width. Same as FILL_AW; >= 1.
   parameter int FetchAddrWidth = -1,
   /// Fetch interface data width. Power of two; >= 8.
   parameter int FetchDataWidth = -1,
-  /// Fill interface address width. Same as FETCH_AW; >= 1.
+  /// Fill interface address width. Same as FetchAddrWidth; >= 1.
   parameter int AxiAddrWidth = -1,
   /// Fill interface data width. Power of two; >= 8.
   parameter int AxiDataWidth = -1,
+  /// Allow fetches to have priority over prefetches for L0 to L1
+  parameter bit FetchPriority = 1'b1,
+  /// Merge L0-L1 fetches if requesting the same address
+  parameter bit MergeFetches = 1'b1,
+  /// Serialize the L1 lookup (parallel tag/data lookup by default)
+  parameter bit SerialLookup = 1'b1,
+  /// Replace the L1 tag banks with latch-based SCM.
+  parameter bit L1TagScm = 1'b1,
+  /// Number of pending response beats for the L1 cache.
+  parameter int unsigned NumAxiOutstanding = 4,
+  /// This reduces area impact at the cost of
+  /// increased hassle of having latches in
+  /// the design.
+  /// i_snitch_icache/gen_prefetcher*i_snitch_icache_l0/data*/Q
+  parameter bit EarlyLatch = 1'b0,
+  /// Tag width of the data determining logic, this can reduce the
+  /// the critical path into the L0 cache when small. The trade-off
+  /// is a higher miss-rate in case the smaller tag matches more
+  /// tags. The tag must be smaller than the necessary L0 tag.
+  /// If configured to `-1` the entire tag is used, effectively
+  /// disabling this feature.
+  parameter int L0EarlyTagWidth = -1,
+  /// Operate L0 cache in slower clock-domain
+  parameter bit IsoCrossing      = 1,
   /// Configuration input types for memory cuts used in implementation.
   parameter type sram_cfg_data_t  = logic,
   parameter type sram_cfg_tag_t   = logic,
@@ -73,6 +97,7 @@ module obi_icache_wrap #(
   output axi_req_t                                              axi_req_o,
   input  axi_rsp_t                                              axi_rsp_i
 );
+  // AdapterType 1 is the only tested variant
   localparam int unsigned AdapterType = 1;
 
   logic [NumFetchPorts-1:0] fetch_valid, fetch_ready, fetch_rerror;
@@ -192,26 +217,27 @@ module obi_icache_wrap #(
   end
 
   snitch_icache #(
-    .NR_FETCH_PORTS     ( NumFetchPorts   ),
-    .L0_LINE_COUNT      ( L0_LINE_COUNT   ),
-    .LINE_WIDTH         ( LINE_WIDTH      ),
-    .LINE_COUNT         ( LINE_COUNT      ),
-    .WAY_COUNT          ( WAY_COUNT       ),
-    .FETCH_AW           ( FetchAddrWidth  ),
-    .FETCH_DW           ( FetchDataWidth  ),
-    .FILL_AW            ( AxiAddrWidth    ),
-    .FILL_DW            ( AxiDataWidth    ),
-    .FETCH_PRIORITY     ( 1               ),
-    .MERGE_FETCHES      ( 1               ),
-    .L1_TAG_SCM         ( 1               ),
-    .SERIAL_LOOKUP      ( 1               ),
-    .NUM_AXI_OUTSTANDING( 4               ),
-    .EARLY_LATCH        ( 0               ),
-    .ISO_CROSSING       ( 0               ),
-    .sram_cfg_data_t    ( sram_cfg_data_t ),
-    .sram_cfg_tag_t     ( sram_cfg_tag_t  ),
-    .axi_req_t          ( axi_req_t       ),
-    .axi_rsp_t          ( axi_rsp_t       )
+    .NR_FETCH_PORTS     ( NumFetchPorts     ),
+    .L0_LINE_COUNT      ( L0LineCount       ),
+    .LINE_WIDTH         ( LineWidth         ),
+    .LINE_COUNT         ( LineCount         ),
+    .WAY_COUNT          ( WayCount          ),
+    .FETCH_AW           ( FetchAddrWidth    ),
+    .FETCH_DW           ( FetchDataWidth    ),
+    .FILL_AW            ( AxiAddrWidth      ),
+    .FILL_DW            ( AxiDataWidth      ),
+    .FETCH_PRIORITY     ( FetchPriority     ),
+    .MERGE_FETCHES      ( MergeFetches      ),
+    .SERIAL_LOOKUP      ( SerialLookup      ),
+    .L1_TAG_SCM         ( L1TagScm          ),
+    .NUM_AXI_OUTSTANDING( NumAxiOutstanding ),
+    .EARLY_LATCH        ( EarlyLatch        ),
+    .L0_EARLY_TAG_WIDTH ( L0EarlyTagWidth   ),
+    .ISO_CROSSING       ( IsoCrossing       ),
+    .sram_cfg_data_t    ( sram_cfg_data_t   ),
+    .sram_cfg_tag_t     ( sram_cfg_tag_t    ),
+    .axi_req_t          ( axi_req_t         ),
+    .axi_rsp_t          ( axi_rsp_t         )
   ) i_snitch_icache (
     .clk_i,
     .clk_d2_i         ( clk_i                 ),
