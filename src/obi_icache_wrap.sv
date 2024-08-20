@@ -21,7 +21,7 @@
 ///   FetchDataWidth = PRI_FETCH_DATA_WIDTH
 ///   AxiAddrWidth = AXI_ADDR
 ///   AxiDataWidth = AXI_DATA
-module obi_icache_wrap #(
+module obi_icache_wrap import snitch_icache_pkg::*; #(
   /// Number of request (fetch) ports
   parameter int NumFetchPorts = -1,
   /// L0 Cache Line Count
@@ -73,29 +73,30 @@ module obi_icache_wrap #(
   parameter type axi_req_t = logic,
   parameter type axi_rsp_t = logic
 ) (
-  input  logic                                                  clk_i,
-  input  logic                                                  rst_ni,
+  input  logic                                         clk_i,
+  input  logic                                         rst_ni,
 
   // Processor interface
-  input  logic [NumFetchPorts-1:0]                              fetch_req_i,
-  input  logic [NumFetchPorts-1:0][FetchAddrWidth-1:0]          fetch_addr_i,
-  output logic [NumFetchPorts-1:0]                              fetch_gnt_o,
-  output logic [NumFetchPorts-1:0]                              fetch_rvalid_o,
-  output logic [NumFetchPorts-1:0][FetchDataWidth-1:0]          fetch_rdata_o,
-  output logic [NumFetchPorts-1:0]                              fetch_rerror_o,
+  input  logic [NumFetchPorts-1:0]                     fetch_req_i,
+  input  logic [NumFetchPorts-1:0][FetchAddrWidth-1:0] fetch_addr_i,
+  output logic [NumFetchPorts-1:0]                     fetch_gnt_o,
+  output logic [NumFetchPorts-1:0]                     fetch_rvalid_o,
+  output logic [NumFetchPorts-1:0][FetchDataWidth-1:0] fetch_rdata_o,
+  output logic [NumFetchPorts-1:0]                     fetch_rerror_o,
 
-  input  logic                                                  enable_prefetching_i,
-  output snitch_icache_pkg::icache_events_t [NumFetchPorts-1:0] icache_events_o,
-  input  logic [NumFetchPorts-1:0]                              flush_valid_i,
-  output logic [NumFetchPorts-1:0]                              flush_ready_o,
+  input  logic                                         enable_prefetching_i,
+  output icache_l0_events_t [NumFetchPorts-1:0]        icache_l0_events_o,
+  output icache_l1_events_t                            icache_l1_events_o,
+  input  logic [NumFetchPorts-1:0]                     flush_valid_i,
+  output logic [NumFetchPorts-1:0]                     flush_ready_o,
 
   // SRAM configs
-  input  sram_cfg_data_t                                        sram_cfg_data_i,
-  input  sram_cfg_tag_t                                         sram_cfg_tag_i,
+  input  sram_cfg_data_t                               sram_cfg_data_i,
+  input  sram_cfg_tag_t                                sram_cfg_tag_i,
 
   // AXI interface
-  output axi_req_t                                              axi_req_o,
-  input  axi_rsp_t                                              axi_rsp_i
+  output axi_req_t                                     axi_req_o,
+  input  axi_rsp_t                                     axi_rsp_i
 );
   // AdapterType 1 is the only tested variant
   localparam int unsigned AdapterType = 1;
@@ -244,7 +245,8 @@ module obi_icache_wrap #(
     .rst_ni,
 
     .enable_prefetching_i,
-    .icache_events_o,
+    .icache_l0_events_o,
+    .icache_l1_events_o,
     .flush_valid_i,
     .flush_ready_o,
 
