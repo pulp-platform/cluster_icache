@@ -492,7 +492,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   // Find first taken branch
   lzc #(
     .WIDTH(FetchPkts),
-    .MODE(0)
+    .MODE(1)
   ) i_lzc_branch (
     // look at branches and jals
     .in_i (mask & (is_branch_taken | is_jal)),
