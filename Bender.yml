@@ -37,7 +37,7 @@ sources:
   # Level 3
   - src/snitch_icache.sv
   - src/snitch_read_only_cache.sv
-  - target: test
+  - target: all(not(vcs),test)
     files:
       - test/snitch_icache_l0_tb.sv
       - test/snitch_read_only_cache_tb.sv
