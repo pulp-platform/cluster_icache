@@ -101,7 +101,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
 
   assign evict_because_miss = miss & ~last_cycle_was_miss_q;
   assign evict_because_prefetch = latch_prefetch & ~last_cycle_was_prefetch_q;
-  assign incoming_rsp_is_prefetch = (out_rsp_id_i == ('b1 << {L0_ID, out_req.is_prefetch}));
+  assign incoming_rsp_is_prefetch = (out_rsp_id_i == ('b1 << {L0_ID, 1'b1}));
   // If we get a miss, but there is already a prefetch request in flight for the missed line, simply
   // wait for that prefetch response to come in.
   assign prefetching_missed_line = pending_prefetch_q &
