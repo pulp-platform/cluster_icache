@@ -335,7 +335,7 @@ module snitch_icache_l0_tb #(
         repeat (stall_cycles) @(posedge clk);
 
         send_data.error = 1'b0;
-        send_data.id = 0;
+        send_data.id = 1;
         addr = dut_out.addr >> CFG.LINE_ALIGN << CFG.LINE_ALIGN;
         if (!memory.exists(dut_out.addr)) begin
           for (int i = 0; i < CFG.LINE_WIDTH/32; i++) begin
@@ -343,7 +343,7 @@ module snitch_icache_l0_tb #(
             memory[addr][i*32+:32] = rand_data.inst;
           end
         end
-        if (DEBUG) $info("Response for Address: %h, ID: 0, Data: %h", dut_out.addr, memory[addr]);
+        if (DEBUG) $info("Response for Address: %h, ID: 1, Data: %h", dut_out.addr, memory[addr]);
         send_data.data = memory[addr];
         response_lock.get();
         in_driver.send(send_data);
@@ -360,7 +360,7 @@ module snitch_icache_l0_tb #(
         repeat (stall_cycles) @(posedge clk);
 
         send_data.error = 1'b0;
-        send_data.id = 1;
+        send_data.id = 2;
         addr = dut_out.addr >> CFG.LINE_ALIGN << CFG.LINE_ALIGN;
         if (!memory.exists(dut_out.addr)) begin
           for (int i = 0; i < CFG.LINE_WIDTH/32; i++) begin
@@ -368,7 +368,7 @@ module snitch_icache_l0_tb #(
             memory[addr][i*32+:32] = rand_data.inst;
           end
         end
-        if (DEBUG) $info("Response for Address: %h, ID: 1, Data: %h", dut_out.addr, memory[addr]);
+        if (DEBUG) $info("Response for Address: %h, ID: 2, Data: %h", dut_out.addr, memory[addr]);
         send_data.data = memory[addr];
         response_lock.get();
         in_driver.send(send_data);
