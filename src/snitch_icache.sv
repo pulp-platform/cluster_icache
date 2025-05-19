@@ -218,6 +218,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
     prefetch_resp_t local_prefetch_rsp;
     logic           local_prefetch_rsp_valid;
     logic           local_prefetch_rsp_ready;
+    logic [CFG.ID_WIDTH-1:0] masked_local_rsp_id;
 
     assign in_cache_valid[i] = inst_cacheable_i[i] & inst_valid_i[i];
     assign in_bypass_valid[i] = ~inst_cacheable_i[i] & inst_valid_i[i];
@@ -229,6 +230,9 @@ module snitch_icache import snitch_icache_pkg::*; #(
           & {in_cache_error [i], in_cache_data[i]})
       | (~{($bits(in_cache_data[i])+1){inst_cacheable_i[i]}}
           & {in_bypass_error[i], in_bypass_data[i]});
+
+    // ensure the IDs of responses only have those bits set that are set by the L0 cache that receives them, i.e., bits [2*i+1:2*i]
+    assign masked_local_rsp_id = local_prefetch_rsp.id & ('b11 << (2*i));
 
     snitch_icache_l0 #(
       .CFG   ( CFG ),
@@ -252,7 +256,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
 
       .out_rsp_data_i  ( local_prefetch_rsp.data  ),
       .out_rsp_error_i ( local_prefetch_rsp.error ),
-      .out_rsp_id_i    ( local_prefetch_rsp.id    ),
+      .out_rsp_id_i    ( masked_local_rsp_id      ),
       .out_rsp_valid_i ( local_prefetch_rsp_valid ),
       .out_rsp_ready_o ( local_prefetch_rsp_ready )
     );

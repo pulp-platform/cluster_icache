@@ -44,7 +44,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     logic                        vld;
   } tag_t;
 
-  logic [CFG.L0_TAG_WIDTH-1:0] addr_tag, addr_tag_prefetch;
+  logic [CFG.L0_TAG_WIDTH-1:0] addr_tag, addr_tag_prefetch, addr_tag_prefetch_req;
 
   tag_t [CFG.L0_LINE_COUNT-1:0] tag;
   logic [CFG.L0_LINE_COUNT-1:0][CFG.LINE_WIDTH-1:0] data;
@@ -74,7 +74,12 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
 
   // Holds the onehot signal for the line being refilled at the moment
   logic [CFG.L0_LINE_COUNT-1:0] pending_line_refill_q;
-  logic pending_refill_q, pending_refill_d;
+  logic [CFG.L0_LINE_COUNT-1:0] pending_line_prefetch_q;
+  logic pending_refill_q, pending_refill_d, pending_prefetch_q, pending_prefetch_d;
+  // indicate whether the currently incoming data from L1 is a prefetch or a regular refill
+  logic incoming_rsp_is_prefetch;
+  // indicate whether we are waiting for a prefetch response that would turn a miss into a hit
+  logic prefetching_missed_line;
 
   logic evict_req;
   logic last_cycle_was_miss_q;
@@ -96,6 +101,10 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
 
   assign evict_because_miss = miss & ~last_cycle_was_miss_q;
   assign evict_because_prefetch = latch_prefetch & ~last_cycle_was_prefetch_q;
+  assign incoming_rsp_is_prefetch = (out_rsp_id_i == ('b1 << {L0_ID, out_req.is_prefetch}));
+  // If we get a miss, but there is already a prefetch request in flight for the missed line, simply
+  // wait for that prefetch response to come in.
+  assign prefetching_missed_line = pending_prefetch_q & (addr_tag_prefetch_req == addr_tag) & in_valid_i;
 
   assign evict_req = evict_because_miss | evict_because_prefetch;
 
@@ -121,7 +130,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
 
   assign hit_any = |hit;
   assign hit_prefetch_any = |hit_prefetch;
-  assign miss = ~hit_any & in_valid_i & ~pending_refill_q;
+  assign miss = ~hit_any & in_valid_i & ~pending_refill_q & ~prefetching_missed_line;
 
   logic clk_inv;
   tc_clk_inverter i_clk_inv (
@@ -239,14 +248,17 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   assign refill.is_prefetch = 1'b0;
   assign refill_valid = miss;
 
-  `FFL(pending_line_refill_q, evict_strb, evict_req, '0, clk_i, rst_ni)
+  `FFL(pending_line_refill_q, evict_strb, evict_because_miss, '0, clk_i, rst_ni)
+  `FFL(pending_line_prefetch_q, evict_strb, evict_because_prefetch, '0, clk_i, rst_ni)
   `FF(pending_refill_q, pending_refill_d, '0)
+  `FF(pending_prefetch_q, pending_prefetch_d, '0)
 
   always_comb begin
     pending_refill_d = pending_refill_q;
+    pending_prefetch_d = pending_prefetch_q;
     // re-set condition
     if (pending_refill_q) begin
-      if (out_rsp_valid_i & out_rsp_ready_o) begin
+      if (out_rsp_valid_i & out_rsp_ready_o & ~incoming_rsp_is_prefetch) begin
         pending_refill_d = 1'b0;
       end
     // set condition
@@ -254,13 +266,27 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
       if (refill_valid && refill_ready) begin
         pending_refill_d = 1'b1;
       end
-      if (latch_prefetch) begin
-        pending_refill_d = 1'b1;
+    end
+    if (pending_prefetch_q) begin
+      if (out_rsp_valid_i & out_rsp_ready_o & incoming_rsp_is_prefetch) begin
+        pending_prefetch_d = 1'b0;
       end
+    // set condition
+    end else begin
+      if (latch_prefetch) begin
+        pending_prefetch_d = 1'b1;
+      end
+    end
+  end // always_comb
+
+  // depending on whether the incoming data is in response to a prefetch or a miss-refill request, validate the respective line
+  always_comb begin
+    validate_strb = '0;
+    if (out_rsp_valid_i) begin
+      validate_strb = (incoming_rsp_is_prefetch) ? pending_line_prefetch_q : pending_line_refill_q;
     end
   end
 
-  assign validate_strb = out_rsp_valid_i ? pending_line_refill_q : '0;
   assign out_rsp_ready_o = 1'b1;
 
   assign in_error_o = '0;
@@ -290,7 +316,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   // pre-fetched the line yet and there is no other refill in progress.
   assign prefetcher_out.vld = enable_prefetching_i &
                               hit_any & ~hit_prefetch_any &
-                              hit_early_is_onehot & ~pending_refill_q;
+                              hit_early_is_onehot & ~pending_prefetch_q;
 
   localparam int unsigned FetchPkts = CFG.LINE_WIDTH/32;
   logic [FetchPkts-1:0] is_branch_taken;
@@ -387,6 +413,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     end
   end
 
+  assign addr_tag_prefetch_req = prefetch_req_addr_q >> CFG.LINE_ALIGN;
   assign prefetch.is_prefetch = 1'b1;
   assign prefetch.addr = prefetch_req_addr_q;
   assign prefetch_valid = prefetch_req_vld_q;
@@ -424,7 +451,25 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   `ASSERT(RefillRspDataStable,
     out_rsp_valid_i && !out_rsp_ready_o
         |=> $stable(out_rsp_data_i) && $stable(out_rsp_error_i) && $stable(out_rsp_id_i))
+  // ensure that prefetches are not launched while a miss request is in flight
+  `ASSERT(NoPrefetchAfterMissReq, pending_refill_q |-> ~(pending_prefetch_d & ~pending_prefetch_q))
   // make sure we observe a double hit condition
   `COVER(HitEarlyNotOnehot, hit |-> $onehot(hit_early))
+
+`ifndef SYNTHESIS
+  // matrix to indicate whether two tags are equal; used to assert that no two equal tags are stored as valid tags
+  logic [CFG.L0_LINE_COUNT-1:0][CFG.L0_LINE_COUNT-1:0] tags_equal;
+  always_comb begin : check_tags
+    tags_equal = '0;
+    for (int i=0; i<CFG.L0_LINE_COUNT; i++) begin
+      for (int j=0; j<CFG.L0_LINE_COUNT; j++) begin
+        tags_equal[i][j] = (tag[i].tag == tag[j].tag) & tag[i].vld & tag[j].vld;
+      end
+    end
+  end
+  for (genvar g=0; g<CFG.L0_LINE_COUNT; g++) begin : gen_assert_no_duplicate_tags
+    `ASSERT(NoDuplicateTags, $countones(tags_equal[g]) > 0 |-> $onehot(tags_equal[g]) && tags_equal[g][g])
+  end
+`endif
 
 endmodule
