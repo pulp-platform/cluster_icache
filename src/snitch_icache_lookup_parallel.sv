@@ -162,7 +162,7 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
       );
 
 
-    end else begin  // block: gen_tag_scm
+    end else begin : gen_tag_sram  // block: gen_tag_scm
 
       tc_sram_impl #(
         .NumWords (CFG.LINE_COUNT),
@@ -201,7 +201,7 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
         .WriteData  (ram_wdata)
       );
 
-    end else begin
+    end else begin : gen_data_sram
 
       tc_sram_impl #(
         .NumWords (CFG.LINE_COUNT),
