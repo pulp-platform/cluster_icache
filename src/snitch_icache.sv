@@ -34,6 +34,8 @@ module snitch_icache import snitch_icache_pkg::*; #(
   parameter bit SERIAL_LOOKUP = 0,
   /// Replace the L1 tag banks with latch-based SCM.
   parameter bit L1_TAG_SCM = 0,
+  /// Replace the L1 data banks with latch-based SCM.
+  parameter bit L1_DATA_SCM = 0,
   /// Number of pending response beats for the L1 cache.
   parameter int unsigned NUM_AXI_OUTSTANDING = 2,
   /// This reduces area impact at the cost of
@@ -96,6 +98,7 @@ module snitch_icache import snitch_icache_pkg::*; #(
     FILL_AW:            FILL_AW,
     FILL_DW:            FILL_DW,
     L1_TAG_SCM:         L1_TAG_SCM,
+    L1_DATA_SCM:        L1_DATA_SCM,
     EARLY_LATCH:        EARLY_LATCH,
     BUFFER_LOOKUP:      0,
     GUARANTEE_ORDERING: 0,

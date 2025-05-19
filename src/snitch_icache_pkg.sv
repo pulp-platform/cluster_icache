@@ -33,10 +33,11 @@ package snitch_icache_pkg;
     int unsigned FETCH_DW;
     int unsigned FILL_AW;
     int unsigned FILL_DW;
-    bit L1_TAG_SCM;
-    bit EARLY_LATCH;
-    bit BUFFER_LOOKUP;
-    bit GUARANTEE_ORDERING;
+    bit          L1_TAG_SCM;
+    bit          L1_DATA_SCM;
+    bit          EARLY_LATCH;
+    bit          BUFFER_LOOKUP;
+    bit          GUARANTEE_ORDERING;
 
     // Derived values.
     int unsigned FETCH_ALIGN;
@@ -48,7 +49,7 @@ package snitch_icache_pkg;
     int unsigned L0_TAG_WIDTH;
     int unsigned L0_EARLY_TAG_WIDTH;
     int unsigned ID_WIDTH;
-    int unsigned PENDING_IW; // refill ID width
+    int unsigned PENDING_IW;          // refill ID width
   } config_t;
 
 endpackage

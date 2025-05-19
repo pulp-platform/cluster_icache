@@ -145,46 +145,85 @@ module snitch_icache_lookup_parallel import snitch_icache_pkg::*; #(
   end
 
   // Instantiate the RAM ways.
-  for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_ways
-    tc_sram_impl #(
-      .NumWords (CFG.LINE_COUNT),
-      .DataWidth (CFG.TAG_WIDTH+2),
-      .ByteWidth (8),
-      .NumPorts (1),
-      .Latency (1),
-      .impl_in_t (sram_cfg_tag_t)
-    ) i_tag (
-      .clk_i (clk_i),
-      .rst_ni (rst_ni),
-      .impl_i (sram_cfg_tag_i),
-      .impl_o (  ),
-      .req_i (ram_enable[i]),
-      .we_i (ram_write),
-      .addr_i (ram_addr),
-      .wdata_i (ram_wtag),
-      .be_i ('1),
-      .rdata_o (ram_rtag[i])
-    );
+  for (genvar i = 0; i < CFG.WAY_COUNT; i++) begin : g_sets
+    if (CFG.L1_TAG_SCM) begin : gen_tag_scm
 
-    tc_sram_impl #(
-      .NumWords (CFG.LINE_COUNT),
-      .DataWidth (CFG.LINE_WIDTH),
-      .ByteWidth (8),
-      .NumPorts (1),
-      .Latency (1),
-      .impl_in_t (sram_cfg_data_t)
-    ) i_data (
-      .clk_i (clk_i),
-      .rst_ni (rst_ni),
-      .impl_i (sram_cfg_data_i),
-      .impl_o (  ),
-      .req_i (ram_enable[i]),
-      .we_i (ram_write),
-      .addr_i (ram_addr),
-      .wdata_i (ram_wdata),
-      .be_i ('1),
-      .rdata_o (ram_rdata[i])
-    );
+      register_file_1r_1w #(
+        .DATA_WIDTH(CFG.TAG_WIDTH + 2),
+        .ADDR_WIDTH($clog2(CFG.LINE_COUNT))
+      ) i_tag_scm_inst (
+        .clk        (clk_i),
+        .ReadEnable (ram_enable[i] & ~ram_write),
+        .ReadAddr   (ram_addr),
+        .ReadData   (ram_rtag[i]),
+        .WriteEnable(ram_enable[i] & ram_write),
+        .WriteAddr  (ram_addr),
+        .WriteData  (ram_wtag)
+      );
+
+
+    end else begin  // block: gen_tag_scm
+
+      tc_sram_impl #(
+        .NumWords (CFG.LINE_COUNT),
+        .DataWidth(CFG.TAG_WIDTH + 2),
+        .ByteWidth(8),
+        .NumPorts (1),
+        .Latency  (1),
+        .impl_in_t(sram_cfg_tag_t)
+      ) i_tag (
+        .clk_i  (clk_i),
+        .rst_ni (rst_ni),
+        .impl_i (sram_cfg_tag_i),
+        .impl_o (),
+        .req_i  (ram_enable[i]),
+        .we_i   (ram_write),
+        .addr_i (ram_addr),
+        .wdata_i(ram_wtag),
+        .be_i   ('1),
+        .rdata_o(ram_rtag[i])
+      );
+
+    end
+
+    if (CFG.L1_TAG_SCM) begin : gen_data_scm
+
+      register_file_1r_1w #(
+        .DATA_WIDTH(CFG.LINE_WIDTH),
+        .ADDR_WIDTH($clog2(CFG.LINE_COUNT))
+      ) i_data_scm_inst (
+        .clk        (clk_i),
+        .ReadEnable (ram_enable[i] & ~ram_write),
+        .ReadAddr   (ram_addr),
+        .ReadData   (ram_rdata[i]),
+        .WriteEnable(ram_enable[i] & ram_write),
+        .WriteAddr  (ram_addr),
+        .WriteData  (ram_wdata)
+      );
+
+    end else begin
+
+      tc_sram_impl #(
+        .NumWords (CFG.LINE_COUNT),
+        .DataWidth(CFG.LINE_WIDTH),
+        .ByteWidth(8),
+        .NumPorts (1),
+        .Latency  (1),
+        .impl_in_t(sram_cfg_data_t)
+      ) i_data (
+        .clk_i  (clk_i),
+        .rst_ni (rst_ni),
+        .impl_i (sram_cfg_data_i),
+        .impl_o (),
+        .req_i  (ram_enable[i]),
+        .we_i   (ram_write),
+        .addr_i (ram_addr),
+        .wdata_i(ram_wdata),
+        .be_i   ('1),
+        .rdata_o(ram_rdata[i])
+      );
+
+    end
   end
 
   // Determine which RAM line hit, and multiplex that data to the output.
