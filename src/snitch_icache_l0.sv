@@ -104,7 +104,9 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
   assign incoming_rsp_is_prefetch = (out_rsp_id_i == ('b1 << {L0_ID, out_req.is_prefetch}));
   // If we get a miss, but there is already a prefetch request in flight for the missed line, simply
   // wait for that prefetch response to come in.
-  assign prefetching_missed_line = pending_prefetch_q & (addr_tag_prefetch_req == addr_tag) & in_valid_i;
+  assign prefetching_missed_line = pending_prefetch_q &
+                                   (addr_tag_prefetch_req == addr_tag) &
+                                   in_valid_i;
 
   assign evict_req = evict_because_miss | evict_because_prefetch;
 
@@ -468,7 +470,8 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     end
   end
   for (genvar g=0; g<CFG.L0_LINE_COUNT; g++) begin : gen_assert_no_duplicate_tags
-    `ASSERT(NoDuplicateTags, $countones(tags_equal[g]) > 0 |-> $onehot(tags_equal[g]) && tags_equal[g][g])
+    `ASSERT(NoDuplicateTags, $countones(tags_equal[g]) > 0 |->
+            ($onehot(tags_equal[g]) && tags_equal[g][g]))
   end
 `endif
 
