@@ -19,7 +19,9 @@ module snitch_icache_l0
   input logic rst_ni,
   input logic flush_valid_i,
 
-  input  logic              enable_prefetching_i,
+  input logic enable_prefetching_i,
+  input logic enable_branch_pred_i,
+
   output icache_l0_events_t icache_events_o,
 
   input  logic [CFG.FETCH_AW-1:0] in_addr_i,
@@ -106,8 +108,9 @@ module snitch_icache_l0
   assign incoming_rsp_is_prefetch = (out_rsp_id_i == ('b1 << {L0_ID, 1'b1}));
   // If we get a miss, but there is already a prefetch request in flight for the missed line, simply
   // wait for that prefetch response to come in.
-  assign prefetching_missed_line = pending_prefetch_q & (addr_tag_prefetch_req == addr_tag) &
-      in_valid_i;
+  assign prefetching_missed_line = pending_prefetch_q &
+                                   (addr_tag_prefetch_req == addr_tag) &
+                                   in_valid_i;
 
   assign evict_req = evict_because_miss | evict_because_prefetch;
 
@@ -118,14 +121,15 @@ module snitch_icache_l0
   // ------------
   for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_cmp_fetch
     assign hit_early[i] = tag[i].vld &
-        (tag[i].tag[CFG.L0_EARLY_TAG_WIDTH-1:0] == addr_tag[CFG.L0_EARLY_TAG_WIDTH-1:0]);
+      (tag[i].tag[CFG.L0_EARLY_TAG_WIDTH-1:0] == addr_tag[CFG.L0_EARLY_TAG_WIDTH-1:0]);
     // The two signals calculate the same.
     if (CFG.L0_TAG_WIDTH == CFG.L0_EARLY_TAG_WIDTH) begin : gen_hit_assign
       assign hit[i] = hit_early[i];
-      // Compare the rest of the tag.
+    // Compare the rest of the tag.
     end else begin : gen_hit
-      assign hit[i] = hit_early[i] & (tag[i].tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH] ==
-                                      addr_tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]);
+      assign hit[i] = hit_early[i] &
+        (tag[i].tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]
+          == addr_tag[CFG.L0_TAG_WIDTH-1:CFG.L0_EARLY_TAG_WIDTH]);
     end
     assign hit_prefetch[i] = tag[i].vld & (tag[i].tag == addr_tag_prefetch);
   end
@@ -161,10 +165,10 @@ module snitch_icache_l0
     if (CFG.EARLY_LATCH) begin : gen_latch
       logic clk_vld;
       tc_clk_gating i_clk_gate (
-        .clk_i    (clk_inv),
-        .en_i     (validate_strb[i]),
-        .test_en_i(1'b0),
-        .clk_o    (clk_vld)
+        .clk_i     (clk_inv         ),
+        .en_i      (validate_strb[i]),
+        .test_en_i (1'b0            ),
+        .clk_o     (clk_vld         )
       );
       // Data Array
       /* verilator lint_off NOLATCH */
@@ -200,10 +204,10 @@ module snitch_icache_l0
   // multiple entries in the tag array)
   if (CFG.L0_TAG_WIDTH != CFG.L0_EARLY_TAG_WIDTH) begin : gen_multihit_detection
     cc_onehot #(
-      .Width(CFG.L0_LINE_COUNT)
+      .Width (CFG.L0_LINE_COUNT)
     ) i_onehot_hit_early (
-      .d_i        (hit_early),
-      .is_onehot_o(hit_early_is_onehot)
+      .d_i (hit_early),
+      .is_onehot_o (hit_early_is_onehot)
     );
   end else begin : gen_no_multihit_detection
     assign hit_early_is_onehot = 1'b1;
@@ -216,15 +220,15 @@ module snitch_icache_l0
 
   always_comb begin : evictor
     evict_strb = '0;
-    cnt_d      = cnt_q;
+    cnt_d = cnt_q;
 
     // Round-Robin
     if (evict_req) begin
       evict_strb = 1 << cnt_q;
-      cnt_d      = cnt_q + 1;
+      cnt_d = cnt_q + 1;
       if (evict_strb == hit_early) begin
         evict_strb = 1 << cnt_d;
-        cnt_d      = cnt_q + 2;
+        cnt_d = cnt_q + 2;
       end
     end
   end
@@ -256,14 +260,14 @@ module snitch_icache_l0
   `FF(pending_prefetch_q, pending_prefetch_d, '0)
 
   always_comb begin
-    pending_refill_d   = pending_refill_q;
+    pending_refill_d = pending_refill_q;
     pending_prefetch_d = pending_prefetch_q;
     // re-set condition
     if (pending_refill_q) begin
       if (out_rsp_valid_i & out_rsp_ready_o & ~incoming_rsp_is_prefetch) begin
         pending_refill_d = 1'b0;
       end
-      // set condition
+    // set condition
     end else begin
       if (refill_valid && refill_ready) begin
         pending_refill_d = 1'b1;
@@ -273,13 +277,13 @@ module snitch_icache_l0
       if (out_rsp_valid_i & out_rsp_ready_o & incoming_rsp_is_prefetch) begin
         pending_prefetch_d = 1'b0;
       end
-      // set condition
+    // set condition
     end else begin
       if (latch_prefetch) begin
         pending_prefetch_d = 1'b1;
       end
     end
-  end  // always_comb
+  end // always_comb
 
   // depending on whether the incoming data is in response to a prefetch or a miss-refill request, validate the respective line
   always_comb begin
@@ -291,23 +295,23 @@ module snitch_icache_l0
 
   assign out_rsp_ready_o = 1'b1;
 
-  assign in_error_o      = '0;
+  assign in_error_o = '0;
 
-  assign out_req_addr_o  = out_req.addr;
-  assign out_req_id_o    = 'b1 << {L0_ID, out_req.is_prefetch};
+  assign out_req_addr_o = out_req.addr;
+  assign out_req_id_o = 'b1 << {L0_ID, out_req.is_prefetch};
 
   // Priority arbitrate requests.
   always_comb begin
-    out_req         = prefetch;
+    out_req = prefetch;
     out_req_valid_o = prefetch_valid;
-    prefetch_ready  = out_req_ready_i;
-    refill_ready    = 1'b0;
+    prefetch_ready = out_req_ready_i;
+    refill_ready = 1'b0;
 
     if (refill_valid) begin
       out_req_valid_o = refill_valid;
-      out_req         = refill;
-      refill_ready    = out_req_ready_i;
-      prefetch_ready  = 1'b0;
+      out_req = refill;
+      refill_ready = out_req_ready_i;
+      prefetch_ready = 1'b0;
     end
   end
 
@@ -316,10 +320,11 @@ module snitch_icache_l0
   // -------------
   // Generate a prefetch request if the cache hits and we haven't
   // pre-fetched the line yet and there is no other refill in progress.
-  assign prefetcher_out.vld = enable_prefetching_i & hit_any & ~hit_prefetch_any &
-      hit_early_is_onehot & ~pending_prefetch_q;
+  assign prefetcher_out.vld = enable_prefetching_i &
+                              hit_any & ~hit_prefetch_any &
+                              hit_early_is_onehot & ~pending_prefetch_q;
 
-  localparam int unsigned FetchPkts = CFG.LINE_WIDTH / 32;
+  localparam int unsigned FetchPkts = CFG.LINE_WIDTH/32;
   logic [FetchPkts-1:0] is_branch_taken;
   logic [FetchPkts-1:0] is_jal;
   logic [FetchPkts-1:0] mask;
@@ -332,22 +337,28 @@ module snitch_icache_l0
     always_comb begin
       is_branch_taken[i] = 1'b0;
       is_jal[i]          = 1'b0;
-      unique casez (ins_data[i*32+:32])
-        // static prediction
-        riscv_instr_branch::BEQ, riscv_instr_branch::BNE, riscv_instr_branch::BLT,
-            riscv_instr_branch::BGE, riscv_instr_branch::BLTU, riscv_instr_branch::BGEU: begin
-          // look at the sign bit of the immediate field
-          // backward branches (immediate negative) taken
-          // forward branches not taken
-          is_branch_taken[i] = ins_data[i*32+31];
-        end
-        riscv_instr_branch::JAL: begin
-          is_jal[i] = 1'b1;
-        end
-        // we can't do anything about the JALR case as we don't
-        // know the destination.
-        default: ;
-      endcase
+      if (enable_branch_pred_i) begin
+        unique casez (ins_data[i*32+:32])
+          // static prediction
+          riscv_instr_branch::BEQ,
+            riscv_instr_branch::BNE,
+            riscv_instr_branch::BLT,
+            riscv_instr_branch::BGE,
+            riscv_instr_branch::BLTU,
+            riscv_instr_branch::BGEU: begin
+            // look at the sign bit of the immediate field
+            // backward branches (immediate negative) taken
+            // forward branches not taken
+            is_branch_taken[i] = ins_data[i*32+31];
+          end
+          riscv_instr_branch::JAL: begin
+            is_jal[i] = 1'b1;
+          end
+          // we can't do anything about the JALR case as we don't
+          // know the destination.
+          default: ;
+        endcase  // unique casez (ins_data[i*32+:32])
+      end  // if (enable_branch_pred_i)
     end
   end
 
