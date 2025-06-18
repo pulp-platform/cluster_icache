@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+### Changed
+- Rename signals indicating cache way from `*set*` to `*way*`.
+
+## 0.2.0 - 24.02.2025
 ### Fixed
 - lookup_serial: Make `write_ready_o` independent of `write_valid_i`.
 - Fix L0 testbench.

@@ -1,5 +1,4 @@
 .bender
-Bender.lock
 compile.tcl
 
 modelsim.ini

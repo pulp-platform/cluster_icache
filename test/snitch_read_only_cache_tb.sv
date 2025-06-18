@@ -74,7 +74,7 @@ class semirand_axi_master #(
 
   task send_ars(input int n_reads);
     automatic logic rand_success;
-    automatic ax_beat_t ar_beat = new_rand_burst(1'b1);
+    automatic ax_beat_t ar_beat = new_rand_burst(1'b1, '0);
     repeat (n_reads) begin
       automatic id_t id;
       automatic logic jump;
@@ -82,7 +82,7 @@ class semirand_axi_master #(
       rand_success = std::randomize(jump) with {jump dist {1'b0 := 90, 1'b1 := 10};};
       assert(rand_success);
       if (jump) begin
-        ar_beat = new_rand_burst(1'b1);
+        ar_beat = new_rand_burst(1'b1, '0);
       end else begin
         ar_beat.ax_addr = ar_beat.ax_addr + AXI_ADDR_INCR;
       end
@@ -90,7 +90,7 @@ class semirand_axi_master #(
         rand_wait(1, 1);
       end
       if (AXI_EXCLS) begin
-        rand_excl_ar(ar_beat);
+        rand_excl_ar(ar_beat, '0);
       end
       if (AXI_ATOPS) begin
         // The ID must not be the same as that of any in-flight ATOP.
@@ -129,7 +129,7 @@ class semirand_axi_master #(
       end
       recv_rs(ar_done, aw_done);
       begin
-        create_aws(n_writes);
+        create_aws(n_writes, '0);
         aw_done = 1'b1;
       end
       send_aws(aw_done);
