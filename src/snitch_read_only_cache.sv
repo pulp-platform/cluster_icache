@@ -11,7 +11,7 @@
 module snitch_read_only_cache import snitch_icache_pkg::*; #(
   /// Cache Line Width
   parameter int unsigned LineWidth    = -1,
-  /// The number of cache lines per set. Power of two; >= 2.
+  /// The number of cache lines per way. Power of two; >= 2.
   parameter int unsigned LineCount    = -1,
   /// The set associativity of the cache. Power of two; >= 1.
   parameter int unsigned WayCount     = 1,
@@ -210,7 +210,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
     FILL_ALIGN:    $clog2(AxiDataWidth/8),
     LINE_ALIGN:    $clog2(LineWidth/8),
     COUNT_ALIGN:   cf_math_pkg::idx_width(LineCount),
-    SET_ALIGN:     cf_math_pkg::idx_width(WayCount),
+    WAY_ALIGN:     cf_math_pkg::idx_width(WayCount),
     TAG_WIDTH:     AxiAddrWidth - $clog2(LineWidth/8) - $clog2(LineCount) + 1,
     ID_WIDTH:      2**AxiIdWidth,
     PENDING_IW:    $clog2(PendingCount),
@@ -230,7 +230,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
 
   logic [CFG.FETCH_AW-1:0]    lookup_addr;
   logic [CFG.ID_WIDTH-1:0]    lookup_id;
-  logic [CFG.SET_ALIGN-1:0]   lookup_set;
+  logic [CFG.WAY_ALIGN-1:0]   lookup_way;
   logic                       lookup_hit;
   logic [CFG.LINE_WIDTH-1:0]  lookup_data;
   logic                       lookup_error;
@@ -249,7 +249,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
   logic                       handler_rsp_ready;
 
   logic [CFG.COUNT_ALIGN-1:0] write_addr;
-  logic [CFG.SET_ALIGN-1:0]   write_set;
+  logic [CFG.WAY_ALIGN-1:0]   write_way;
   logic [CFG.LINE_WIDTH-1:0]  write_data;
   logic [CFG.TAG_WIDTH-1:0]   write_tag;
   logic                       write_error;
@@ -303,7 +303,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
 
       .out_addr_o    ( lookup_addr   ),
       .out_id_o      ( lookup_id     ),
-      .out_set_o     ( lookup_set    ),
+      .out_way_o     ( lookup_way    ),
       .out_hit_o     ( lookup_hit    ),
       .out_data_o    ( lookup_data   ),
       .out_error_o   ( lookup_error  ),
@@ -311,7 +311,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
       .out_ready_i   ( lookup_ready  ),
 
       .write_addr_i  ( write_addr    ),
-      .write_set_i   ( write_set     ),
+      .write_way_i   ( write_way     ),
       .write_data_i  ( write_data    ),
       .write_tag_i   ( write_tag     ),
       .write_error_i ( write_error   ),
@@ -341,7 +341,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
 
       .out_addr_o    ( lookup_addr   ),
       .out_id_o      ( lookup_id     ),
-      .out_set_o     ( lookup_set    ),
+      .out_way_o     ( lookup_way    ),
       .out_hit_o     ( lookup_hit    ),
       .out_data_o    ( lookup_data   ),
       .out_error_o   ( lookup_error  ),
@@ -349,7 +349,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
       .out_ready_i   ( lookup_ready  ),
 
       .write_addr_i  ( write_addr    ),
-      .write_set_i   ( write_set     ),
+      .write_way_i   ( write_way     ),
       .write_data_i  ( write_data    ),
       .write_tag_i   ( write_tag     ),
       .write_error_i ( write_error   ),
@@ -371,7 +371,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
 
     .in_req_addr_i   ( lookup_addr       ),
     .in_req_id_i     ( lookup_id         ),
-    .in_req_set_i    ( lookup_set        ),
+    .in_req_way_i    ( lookup_way        ),
     .in_req_hit_i    ( lookup_hit        ),
     .in_req_data_i   ( lookup_data       ),
     .in_req_error_i  ( lookup_error      ),
@@ -385,7 +385,7 @@ module snitch_read_only_cache import snitch_icache_pkg::*; #(
     .in_rsp_ready_i  ( in_rsp_ready      ),
 
     .write_addr_o    ( write_addr        ),
-    .write_set_o     ( write_set         ),
+    .write_way_o     ( write_way         ),
     .write_data_o    ( write_data        ),
     .write_tag_o     ( write_tag         ),
     .write_error_o   ( write_error       ),

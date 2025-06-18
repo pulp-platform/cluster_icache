@@ -43,7 +43,7 @@ package snitch_icache_pkg;
     int unsigned FILL_ALIGN;
     int unsigned LINE_ALIGN;
     int unsigned COUNT_ALIGN;
-    int unsigned SET_ALIGN;
+    int unsigned WAY_ALIGN;
     int unsigned TAG_WIDTH;
     int unsigned L0_TAG_WIDTH;
     int unsigned L0_EARLY_TAG_WIDTH;
