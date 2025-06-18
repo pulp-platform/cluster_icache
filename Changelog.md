@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Rename signals indicating cache way from `*set*` to `*way*`.
 
+### Fixed
+- Improve performance when prefetching misses.
+
+### Added
+- Add L1 DATA SCM config option.
+- Add option to disable branch prediction in prefetcher.
+
 ## 0.2.0 - 24.02.2025
 ### Fixed
 - lookup_serial: Make `write_ready_o` independent of `write_valid_i`.

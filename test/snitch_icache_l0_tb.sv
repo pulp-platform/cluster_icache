@@ -88,6 +88,7 @@ module snitch_icache_l0_tb #(
       FILL_AW:            FILL_AW,
       FILL_DW:            FILL_DW,
       L1_TAG_SCM:         1'b0,
+      L1_DATA_SCM:        1'b0,
       EARLY_LATCH:        EARLY_LATCH,
       BUFFER_LOOKUP:      BUFFER_LOOKUP,
       GUARANTEE_ORDERING: GUARANTEE_ORDERING,
@@ -160,6 +161,7 @@ module snitch_icache_l0_tb #(
     .clk_i (clk),
     .rst_ni (~rst),
     .enable_prefetching_i (1'b1),
+    .enable_branch_pred_i (1'b1),
     .icache_events_o (),
     .flush_valid_i (dut_flush_valid),
     .in_addr_i (dut_addr),
@@ -335,7 +337,7 @@ module snitch_icache_l0_tb #(
         repeat (stall_cycles) @(posedge clk);
 
         send_data.error = 1'b0;
-        send_data.id = 0;
+        send_data.id = 1;
         addr = dut_out.addr >> CFG.LINE_ALIGN << CFG.LINE_ALIGN;
         if (!memory.exists(dut_out.addr)) begin
           for (int i = 0; i < CFG.LINE_WIDTH/32; i++) begin
@@ -343,7 +345,7 @@ module snitch_icache_l0_tb #(
             memory[addr][i*32+:32] = rand_data.inst;
           end
         end
-        if (DEBUG) $info("Response for Address: %h, ID: 0, Data: %h", dut_out.addr, memory[addr]);
+        if (DEBUG) $info("Response for Address: %h, ID: 1, Data: %h", dut_out.addr, memory[addr]);
         send_data.data = memory[addr];
         response_lock.get();
         in_driver.send(send_data);
@@ -360,7 +362,7 @@ module snitch_icache_l0_tb #(
         repeat (stall_cycles) @(posedge clk);
 
         send_data.error = 1'b0;
-        send_data.id = 1;
+        send_data.id = 2;
         addr = dut_out.addr >> CFG.LINE_ALIGN << CFG.LINE_ALIGN;
         if (!memory.exists(dut_out.addr)) begin
           for (int i = 0; i < CFG.LINE_WIDTH/32; i++) begin
@@ -368,7 +370,7 @@ module snitch_icache_l0_tb #(
             memory[addr][i*32+:32] = rand_data.inst;
           end
         end
-        if (DEBUG) $info("Response for Address: %h, ID: 1, Data: %h", dut_out.addr, memory[addr]);
+        if (DEBUG) $info("Response for Address: %h, ID: 2, Data: %h", dut_out.addr, memory[addr]);
         send_data.data = memory[addr];
         response_lock.get();
         in_driver.send(send_data);
