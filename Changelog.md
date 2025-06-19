@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## Unreleased
+
+## 0.3.0 - 19.06.2025
 ### Changed
 - Rename signals indicating cache way from `*set*` to `*way*`.
 
