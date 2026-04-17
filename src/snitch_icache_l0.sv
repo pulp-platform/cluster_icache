@@ -465,9 +465,9 @@ module snitch_icache_l0
   `ASSERT(HitOnehot, $onehot0(hit))
   // make sure only one signal is high and the conditions are mutual exclusive
   `ASSERT(ExclusiveEvict, $onehot0({evict_because_miss, evict_because_prefetch}))
-  // request must be stable
-  `ASSERT(InstReqStable, in_valid_i && !in_ready_o |=> in_valid_i)
-  `ASSERT(InstReqDataStable, in_valid_i && !in_ready_o |=> $stable(in_addr_i))
+  // A flush intentionally cancels the frontend request.
+  `ASSERT_STABLE(InstReqStable, in_valid_i, in_ready_o, in_valid_i, '0, clk_i, !rst_ni || flush_valid_i)
+  `ASSERT_STABLE(InstReqDataStable, in_valid_i, in_ready_o, in_addr_i, '0, clk_i, !rst_ni || flush_valid_i)
 
   `ASSERT(RefillReqStable, out_req_valid_o && !out_req_ready_i |=> out_req_valid_o)
   `ASSERT(RefillReqDataStable, out_req_valid_o && !out_req_ready_i |=> $stable(out_req_addr_o)
