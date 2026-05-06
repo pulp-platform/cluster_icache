@@ -320,7 +320,7 @@ module snitch_icache_l0
   // -------------
   // Generate a prefetch request if the cache hits and we haven't
   // pre-fetched the line yet and there is no other refill in progress.
-  assign prefetcher_out.vld = enable_prefetching_i &
+  assign prefetcher_out.vld = enable_prefetching_i & in_valid_i &
                               hit_any & ~hit_prefetch_any &
                               hit_early_is_onehot & ~pending_prefetch_q;
 
