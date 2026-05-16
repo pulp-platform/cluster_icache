@@ -60,7 +60,7 @@ module snitch_read_only_cache
 
   `include "axi/typedef.svh"
   `include "common_cells/registers.svh"
-  import cf_math_pkg::idx_width;
+  import cc_pkg::idx_width;
 
   // Check for supported parameters
   if (AxiDataWidth < 32) $error("snitch_read_only_cache: AxiDataWidth must be larger than 32.");
@@ -122,7 +122,6 @@ module snitch_read_only_cache
   ) i_axi_demux (
     .clk_i,
     .rst_ni,
-    .test_i         (1'b0),
     .slv_req_i      (axi_slv_req_i),
     .slv_aw_select_i(slv_aw_select),
     .slv_ar_select_i(slv_ar_select),
@@ -143,7 +142,7 @@ module snitch_read_only_cache
     assign addr_map[i] = '{idx: Cache, start_addr: start_addr_i[i], end_addr: end_addr_i[i]};
   end
 
-  addr_decode #(
+  cc_addr_decode #(
     .NoIndices(NoMstPorts),
     .NoRules  (NrAddrRules),
     .addr_t   (addr_t),
@@ -211,8 +210,8 @@ module snitch_read_only_cache
       FETCH_ALIGN: $clog2(AxiDataWidth / 8),
       FILL_ALIGN: $clog2(AxiDataWidth / 8),
       LINE_ALIGN: $clog2(LineWidth / 8),
-      COUNT_ALIGN: cf_math_pkg::idx_width(LineCount),
-      WAY_ALIGN: cf_math_pkg::idx_width(WayCount),
+      COUNT_ALIGN: cc_pkg::idx_width(LineCount),
+      WAY_ALIGN: cc_pkg::idx_width(WayCount),
       TAG_WIDTH: AxiAddrWidth - $clog2(LineWidth / 8) - $clog2(LineCount) + 1,
       ID_WIDTH: 2 ** AxiIdWidth,
       PENDING_IW: $clog2(PendingCount),
@@ -469,7 +468,6 @@ module snitch_read_only_cache
   ) i_axi_mux (
     .clk_i,
     .rst_ni,
-    .test_i     (1'b0),
     .slv_reqs_i ({refill_req, demux_req[Bypass]}),
     .slv_resps_o({refill_rsp, demux_rsp[Bypass]}),
     .mst_req_o  (axi_mst_req_o),

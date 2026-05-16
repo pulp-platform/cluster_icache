@@ -254,8 +254,9 @@ module snitch_icache_lookup_parallel
     end
   end
 
-  lzc #(
-    .WIDTH(CFG.WAY_COUNT)
+  cc_lzc #(
+    .Width(CFG.WAY_COUNT),
+    .Mode (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_lzc (
     .in_i   (line_hit),
     .cnt_o  (data_d.cway),
@@ -264,13 +265,12 @@ module snitch_icache_lookup_parallel
 
   // Buffer response in case we are stalled
   if (CFG.BUFFER_LOOKUP) begin : gen_buffer
-    fall_through_register #(
-      .T(out_buffer_t)
+    cc_fall_through_register #(
+      .data_t(out_buffer_t)
     ) i_rsp_buffer (
       .clk_i     (clk_i),
       .rst_ni    (rst_ni),
       .clr_i     (1'b0),
-      .testmode_i(1'b0),
       // Input port
       .valid_i   (valid_q),
       .ready_o   (buffer_ready),

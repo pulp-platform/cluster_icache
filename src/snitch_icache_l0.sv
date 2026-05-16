@@ -367,9 +367,9 @@ module snitch_icache_l0
   logic [$clog2(CFG.LINE_WIDTH)-1:0] ins_idx;
   assign ins_idx = 32 * taken_idx;
   // Find first taken branch
-  lzc #(
-    .WIDTH(FetchPkts),
-    .MODE (0)
+  cc_lzc #(
+    .Width(FetchPkts),
+    .Mode (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_lzc_branch (
     // look at branches and jals
     .in_i   (mask & (is_branch_taken | is_jal)),
