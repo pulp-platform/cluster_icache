@@ -135,11 +135,18 @@ module snitch_icache_l0
   assign hit_prefetch_any = |hit_prefetch;
   assign miss             = ~hit_any & in_valid_i & ~pending_refill_q & ~prefetching_missed_line;
 
+  // Only needed when EARLY_LATCH=1: clk_inv drives the clock gate in gen_latch.
+  // Without the generate guard, i_clk_inv is removed as a hanging instance when
+  // EARLY_LATCH=0 because clk_inv has no fanout in that configuration.
   logic clk_inv;
-  tc_clk_inverter i_clk_inv (
-    .clk_i(clk_i),
-    .clk_o(clk_inv)
-  );
+  if (CFG.EARLY_LATCH) begin : gen_clk_inv
+    tc_clk_inverter i_clk_inv (
+      .clk_i(clk_i),
+      .clk_o(clk_inv)
+    );
+  end else begin : gen_no_clk_inv
+    assign clk_inv = '0;
+  end
 
   for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_array
     // Tag Array

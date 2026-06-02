@@ -85,7 +85,7 @@ module snitch_icache_lookup_parallel
     ram_enable    = '0;
     ram_write     = 1'b0;
 
-    if (init_count_q != $unsigned(CFG.LINE_COUNT)) begin
+    if (init_count_q != CFG.LINE_COUNT) begin
       ram_addr   = init_count_q;
       ram_enable = '1;
       ram_write  = 1'b1;
@@ -107,7 +107,7 @@ module snitch_icache_lookup_parallel
 
   always_ff @(posedge clk_i, negedge rst_ni) begin
     if (!rst_ni) init_count_q <= '0;
-    else if (init_count_q != $unsigned(CFG.LINE_COUNT)) init_count_q <= init_count_q + 1;
+    else if (init_count_q != CFG.LINE_COUNT) init_count_q <= init_count_q + 1;
     else if (flush_valid_i) init_count_q <= '0;
   end
 
