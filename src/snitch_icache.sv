@@ -469,8 +469,8 @@ module snitch_icache
 
   if (MERGE_FETCHES) begin : gen_merge_fetches
     for (genvar i = 0; i < NR_FETCH_PORTS; i++) begin : gen_prefetch_req_ready
-      assign prefetch_req_ready[i] = prefetch_req_ready_tmp[i] |
-          (prefetch_lookup_req_ready & prefetch_req[i].addr == prefetch_lookup_req.addr);
+      assign prefetch_req_ready[i] = prefetch_lookup_req_ready &
+          (prefetch_req[i].addr == prefetch_lookup_req.addr);
     end
 
     always_comb begin
