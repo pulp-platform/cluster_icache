@@ -135,11 +135,16 @@ module snitch_icache_l0
   assign hit_prefetch_any = |hit_prefetch;
   assign miss             = ~hit_any & in_valid_i & ~pending_refill_q & ~prefetching_missed_line;
 
-  logic clk_inv;
-  tc_clk_inverter i_clk_inv (
-    .clk_i(clk_i),
-    .clk_o(clk_inv)
-  );
+  logic [CFG.LINE_WIDTH-1:0] line_in_q;
+  if (CFG.EARLY_LATCH) begin
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (~rst_ni) begin
+        line_in_q <= '0;
+      end else begin
+        line_in_q <= out_rsp_data_i;
+      end
+    end
+  end
 
   for (genvar i = 0; i < CFG.L0_LINE_COUNT; i++) begin : gen_array
     // Tag Array
@@ -163,7 +168,7 @@ module snitch_icache_l0
     if (CFG.EARLY_LATCH) begin : gen_latch
       logic clk_vld;
       tc_clk_gating i_clk_gate (
-        .clk_i    (clk_inv),
+        .clk_i    (clk_i),
         .en_i     (validate_strb[i]),
         .test_en_i(1'b0),
         .clk_o    (clk_vld)
@@ -173,7 +178,7 @@ module snitch_icache_l0
       /* verilator lint_off COMBDLY */
       always_latch begin
         if (clk_vld) begin
-          data[i] <= out_rsp_data_i;
+          data[i] <= line_in_q;
         end
       end
       /* verilator lint_on COMBDLY */
