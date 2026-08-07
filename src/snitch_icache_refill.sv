@@ -45,21 +45,21 @@ module snitch_icache_refill #(
 
   localparam int unsigned TransactionQueueDepth = 4;
 
-  fifo_v3 #(
-    .DEPTH     (TransactionQueueDepth),
-    .DATA_WIDTH(CFG.PENDING_IW + 1)
+  cc_fifo #(
+    .Depth    (TransactionQueueDepth),
+    .DataWidth(CFG.PENDING_IW + 1)
   ) i_fifo_id_queue (
-    .clk_i     (clk_i),
-    .rst_ni    (rst_ni),
-    .flush_i   (1'b0),
-    .testmode_i(1'b0),
-    .full_o    (queue_full),
-    .empty_o   (),
-    .usage_o   (),
-    .data_i    ({in_req_bypass_i, in_req_id_i}),
-    .push_i    (queue_push),
-    .data_o    ({in_rsp_bypass_o, in_rsp_id_o}),
-    .pop_i     (queue_pop)
+    .clk_i  (clk_i),
+    .rst_ni (rst_ni),
+    .clr_i  (1'b0),
+    .flush_i(1'b0),
+    .full_o (queue_full),
+    .empty_o(),
+    .usage_o(),
+    .data_i ({in_req_bypass_i, in_req_id_i}),
+    .push_i (queue_push),
+    .data_o ({in_rsp_bypass_o, in_rsp_id_o}),
+    .pop_i  (queue_pop)
   );
 
   // Accept incoming requests, push the ID into the queue, and issue the
@@ -83,21 +83,20 @@ module snitch_icache_refill #(
   end else if (CFG.LINE_WIDTH < CFG.FILL_DW) begin : g_data_slice
     localparam int unsigned AddrQueueDepth = CFG.FILL_ALIGN - CFG.LINE_ALIGN;
     logic [AddrQueueDepth-1:0] addr_offset;
-    fifo_v3 #(
-      .DEPTH     (TransactionQueueDepth),
-      .DATA_WIDTH(AddrQueueDepth)
+    cc_fifo #(
+      .Depth    (TransactionQueueDepth),
+      .DataWidth(AddrQueueDepth)
     ) i_fifo_addr_offset (
-      .clk_i     (clk_i),
-      .rst_ni    (rst_ni),
-      .flush_i   (1'b0),
-      .testmode_i(1'b0),
-      .full_o    (  /* same size as the `i_fifo_id_queue` */),
-      .empty_o   (),
-      .usage_o   (),
-      .data_i    (in_req_addr_i[CFG.FILL_ALIGN-1:CFG.LINE_ALIGN]),
-      .push_i    (queue_push),
-      .data_o    (addr_offset),
-      .pop_i     (queue_pop)
+      .clk_i  (clk_i),
+      .rst_ni (rst_ni),
+      .clr_i  (1'b0),
+      .full_o (  /* same size as the `i_fifo_id_queue` */),
+      .empty_o(),
+      .usage_o(),
+      .data_i (in_req_addr_i[CFG.FILL_ALIGN-1:CFG.LINE_ALIGN]),
+      .push_i (queue_push),
+      .data_o (addr_offset),
+      .pop_i  (queue_pop)
     );
     assign response_data = axi_rsp_i.r.data >> (addr_offset * CFG.LINE_WIDTH);
   end else begin : g_data_passthrough

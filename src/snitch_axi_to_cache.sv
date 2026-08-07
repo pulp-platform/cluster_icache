@@ -39,7 +39,7 @@ module snitch_axi_to_cache #(
   output resp_t                      slv_rsp_o
 );
 
-  import cf_math_pkg::idx_width;
+  import cc_pkg::idx_width;
 
   // AXI-word offset within cache line
   localparam int unsigned WordOffset = idx_width(CFG.LINE_WIDTH / CFG.FETCH_DW);
@@ -207,8 +207,8 @@ module snitch_axi_to_cache #(
   assign rsp_in_d.error = rsp_error_i;
   assign rsp_in_d.id    = rsp_id_i;
 
-  spill_register #(
-    .T     (rsp_in_t),
+  cc_spill_register #(
+    .data_t(rsp_in_t),
     .Bypass(1'b0)
   ) i_cut_rsp_in (
     .clk_i  (clk_i),
@@ -235,9 +235,9 @@ module snitch_axi_to_cache #(
   assign rsp_valid     = rsp_valid_q;  // And not empty?
   assign rsp_id_masked = rsp_in_q.id & ~rsp_id_mask;
 
-  lzc #(
-    .WIDTH(CFG.ID_WIDTH),
-    .MODE (0)
+  cc_lzc #(
+    .Width(CFG.ID_WIDTH),
+    .Mode (0)
   ) i_lzc (
     .in_i   (rsp_id_masked),
     .cnt_o  (rsp_id),
@@ -395,8 +395,8 @@ module axi_burst_splitter_table #(
   offset_t                cnt_offset_inp;
   offset_t [MaxTrans-1:0] cnt_offset_oup;
   for (genvar i = 0; i < MaxTrans; i++) begin : gen_cnt
-    counter #(
-      .WIDTH($bits(cnt_t))
+    cc_counter #(
+      .Width($bits(cnt_t))
     ) i_cnt_len (
       .clk_i,
       .rst_ni,
@@ -408,8 +408,8 @@ module axi_burst_splitter_table #(
       .q_o       (cnt_len_oup[i]),
       .overflow_o()                 // not used
     );
-    counter #(
-      .WIDTH($bits(offset_t))
+    cc_counter #(
+      .Width($bits(offset_t))
     ) i_cnt_offset (
       .clk_i,
       .rst_ni,
@@ -426,9 +426,9 @@ module axi_burst_splitter_table #(
   assign cnt_len_inp    = {1'b0, alloc_len_i} + 1;
   assign cnt_offset_inp = alloc_offset_i;
 
-  lzc #(
-    .WIDTH(MaxTrans),
-    .MODE (1'b0)
+  cc_lzc #(
+    .Width(MaxTrans),
+    .Mode (1'b0)
   ) i_lzc (
     .in_i   (cnt_free),
     .cnt_o  (cnt_free_idx),
@@ -437,10 +437,10 @@ module axi_burst_splitter_table #(
 
   logic idq_inp_req, idq_inp_gnt;
   logic idq_oup_gnt, idq_oup_valid, idq_oup_pop;
-  id_queue #(
-    .ID_WIDTH($bits(id_t)),
-    .CAPACITY(MaxTrans),
-    .FULL_BW (1'b1),
+  cc_id_queue #(
+    .IdWidth ($bits(id_t)),
+    .Capacity(MaxTrans),
+    .FullBw  (1'b1),
     .data_t  (cnt_idx_t)
   ) i_idq (
     .clk_i,
