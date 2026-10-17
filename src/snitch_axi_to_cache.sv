@@ -204,9 +204,10 @@ module snitch_axi_to_cache #(
   assign rsp_in_d.error = rsp_error_i;
   assign rsp_in_d.id    = rsp_id_i;
 
-  spill_register #(
+  rel_spill_register #(
     .T      ( rsp_in_t),
-    .Bypass ( 1'b0    )
+    .Bypass ( 1'b0    ),
+    .TmrHandshake ( 1'b0 )
   ) i_cut_rsp_in (
     .clk_i   ( clk_i       ),
     .rst_ni  ( rst_ni      ),
@@ -215,7 +216,10 @@ module snitch_axi_to_cache #(
     .data_i  ( rsp_in_d    ),
     .valid_o ( rsp_valid_q ),
     .ready_i ( rsp_ready_q ),
-    .data_o  ( rsp_in_q    )
+    .data_o  ( rsp_in_q    ),
+    .fault_o ( ),
+    .data_corrector_o ( ),
+    .data_corrected_i ( '0 )
   );
 
   // Reconstruct `id` by splitting cache's ID vector into multiple responses

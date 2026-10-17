@@ -88,9 +88,10 @@ module pulp_icache_wrap #(
     if (AdapterType == 0) begin : gen_response_cut
 
       // Reuquires the core to keep data applied steady while req is high, may not be guaranteed...
-      spill_register #(
+      rel_spill_register #(
         .T     (logic [FetchDataWidth-1+1:0]),
-        .Bypass(1'b0)
+        .Bypass(1'b0),
+        .TmrHandshake (1'b0)
       ) i_spill_reg (
         .clk_i,
         .rst_ni,
@@ -99,7 +100,10 @@ module pulp_icache_wrap #(
         .data_i  ( {fetch_rdata  [i], fetch_rerror  [i]} ),
         .valid_o ( fetch_rvalid_o[i]                     ),
         .ready_i ( '1                                    ),
-        .data_o  ( {fetch_rdata_o[i], fetch_rerror_o[i]} )
+        .data_o  ( {fetch_rdata_o[i], fetch_rerror_o[i]} ),
+        .fault_o ( ),
+        .data_corrector_o ( ),
+        .data_corrected_i ( '0 )
       );
 
       assign fetch_addr[i] = fetch_addr_i[i];
@@ -112,9 +116,10 @@ module pulp_icache_wrap #(
 
       assign fetch_gnt_o[i] = gnt & fetch_req_i[i];
 
-      spill_register #(
+      rel_spill_register #(
         .T     (logic [FetchAddrWidth-1:0]),
-        .Bypass(1'b0)
+        .Bypass(1'b0),
+        .TmrHandshake (1'b0)
       ) i_spill_reg (
         .clk_i,
         .rst_ni,
@@ -123,7 +128,10 @@ module pulp_icache_wrap #(
         .data_i  ( fetch_addr_i[i] ),
         .valid_o ( fetch_valid [i] ),
         .ready_i ( fetch_ready [i] ),
-        .data_o  ( fetch_addr  [i] )
+        .data_o  ( fetch_addr  [i] ),
+        .fault_o ( ),
+        .data_corrector_o ( ),
+        .data_corrected_i ( '0 )
       );
 
       assign fetch_rdata_o [i] = fetch_rdata [i];
@@ -138,9 +146,10 @@ module pulp_icache_wrap #(
       logic spill_valid, spill_ready;
       logic [FetchAddrWidth-1:0] spill_addr;
 
-      spill_register #(
+      rel_spill_register #(
         .T     (logic [FetchAddrWidth-1:0]),
-        .Bypass(1'b0)
+        .Bypass(1'b0),
+        .TmrHandshake (1'b0)
       ) i_req_spill_reg (
         .clk_i,
         .rst_ni,
@@ -149,7 +158,10 @@ module pulp_icache_wrap #(
         .data_i  ( fetch_addr_i[i] ),
         .valid_o ( spill_valid     ),
         .ready_i ( spill_ready     ),
-        .data_o  ( spill_addr      )
+        .data_o  ( spill_addr      ),
+        .fault_o ( ),
+        .data_corrector_o ( ),
+        .data_corrected_i ( '0 )
       );
 
       always_comb begin
@@ -175,9 +187,10 @@ module pulp_icache_wrap #(
       logic spill_rerror;
       logic [FetchDataWidth-1:0] spill_rdata;
 
-      spill_register #(
+      rel_spill_register #(
         .T     (logic [FetchDataWidth-1+1:0]),
-        .Bypass(1'b0)
+        .Bypass(1'b0),
+        .TmrHandshake (1'b0)
       ) i_rsp_spill_reg (
         .clk_i,
         .rst_ni,
@@ -186,7 +199,10 @@ module pulp_icache_wrap #(
         .data_i  ( {fetch_rdata[i], fetch_rerror[i]} ),
         .valid_o ( spill_rvalid                      ),
         .ready_i ( '1                                ),
-        .data_o  ( {spill_rdata   , spill_rerror   } )
+        .data_o  ( {spill_rdata   , spill_rerror   } ),
+        .fault_o ( ),
+        .data_corrector_o ( ),
+        .data_corrected_i ( '0 )
       );
 
       assign fetch_rvalid_o[i] = stalled_q ? fetch_ready[i] : spill_rvalid;

@@ -23,6 +23,7 @@ package snitch_icache_pkg;
     logic l1_handler_stall;
     logic l1_tag_parity_error;
     logic l1_data_parity_error;
+    logic l1_tag_meta_tmr_error;
   } icache_l1_events_t;
 
   typedef struct packed {

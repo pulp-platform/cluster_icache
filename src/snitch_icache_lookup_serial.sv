@@ -48,6 +48,11 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
 
   localparam int unsigned DataAddrWidth = $clog2(CFG.SET_COUNT) + CFG.COUNT_ALIGN;
   localparam int unsigned TagParity = (CFG.L1_DATA_PARITY_BITS > 0) ? 1 : 0;
+  // The tag word's valid/error bits sit outside the tag-address parity field above (which only
+  // covers CFG.TAG_WIDTH-1:0) and so are otherwise completely unprotected against a bit flip.
+  // Triplicate and majority-vote both bits instead: 2 extra replica columns each.
+  localparam int unsigned TagMetaTmrWidth = 4;
+  localparam int unsigned TagEntryWidth   = CFG.TAG_WIDTH + 2 + TagParity + TagMetaTmrWidth;
 
 `ifndef SYNTHESIS
   initial assert(CFG != '0);
@@ -94,8 +99,8 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
 
   logic [CFG.COUNT_ALIGN-1:0]                            tag_addr;
   logic [CFG.SET_COUNT-1:0]                              tag_enable;
-  logic                    [CFG.TAG_WIDTH+1+TagParity:0] tag_wdata;
-  logic [CFG.SET_COUNT-1:0][CFG.TAG_WIDTH+1+TagParity:0] tag_rdata;
+  logic                    [TagEntryWidth-1:0] tag_wdata;
+  logic [CFG.SET_COUNT-1:0][TagEntryWidth-1:0] tag_rdata;
   logic                                                  tag_write;
 
   tag_req_t                   tag_req_d, tag_req_q;
@@ -146,7 +151,9 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
   always_comb begin
     tag_addr                     = in_addr_i[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
     tag_enable                   = '0;
-    tag_wdata[CFG.TAG_WIDTH+1:0] = {1'b1, write_error_i, write_tag_i};
+    tag_wdata[CFG.TAG_WIDTH+1:0]               = {1'b1, write_error_i, write_tag_i};
+    tag_wdata[CFG.TAG_WIDTH+2+TagParity +: 2]  = {2{1'b1}};          // valid replicas
+    tag_wdata[CFG.TAG_WIDTH+4+TagParity +: 2]  = {2{write_error_i}}; // error replicas
     tag_write                    = 1'b0;
 
     write_ready_o = 1'b1;
@@ -160,12 +167,14 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
       tag_addr                     = init_count_q;
       tag_enable                   = '1;
       tag_wdata[CFG.TAG_WIDTH+1:0] = '0;
+      tag_wdata[CFG.TAG_WIDTH+2+TagParity +: TagMetaTmrWidth] = '0;
       tag_write                    = 1'b1;
       write_ready_o = 1'b0;
     end else if (data_fault_valid) begin // Only if data has parity
       tag_addr                     = data_parity_inv_q.addr[CFG.LINE_ALIGN +: CFG.COUNT_ALIGN];
       tag_enable                   = $unsigned(1 << data_parity_inv_q.cset);
       tag_wdata[CFG.TAG_WIDTH+1:0] = '0;
+      tag_wdata[CFG.TAG_WIDTH+2+TagParity +: TagMetaTmrWidth] = '0;
       tag_write                    = 1'b1;
       data_fault_ready             = 1'b1;
       write_ready_o = 1'b0;
@@ -180,7 +189,8 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
       tag_addr                     = tag_req_q >> CFG.LINE_ALIGN; // buffered version of in_addr_i
       tag_enable                   = tag_parity_error_q; // which set must be written (faulty one)
       tag_wdata[CFG.TAG_WIDTH+1:0] = '0;
-      tag_write                    = 1'b0;
+      tag_wdata[CFG.TAG_WIDTH+2+TagParity +: TagMetaTmrWidth] = '0;
+      tag_write                    = 1'b1;
       faulty_hit_ready             = 1'b1;
     end else if (in_valid_i) begin
       // Check cache
@@ -196,7 +206,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : g_sets
       register_file_1r_1w #(
         .ADDR_WIDTH ($clog2(CFG.LINE_COUNT)   ),
-        .DATA_WIDTH (CFG.TAG_WIDTH+2+TagParity)
+        .DATA_WIDTH (TagEntryWidth            )
       ) i_tag (
         .clk         ( clk_i                       ),
       `ifdef TARGET_SCM_USE_FPGA_SCM
@@ -211,16 +221,16 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
       );
     end
   end else begin : gen_sram
-    logic [CFG.SET_COUNT*(CFG.TAG_WIDTH+2+TagParity)-1:0] tag_rdata_flat;
+    logic [CFG.SET_COUNT*TagEntryWidth-1:0] tag_rdata_flat;
     for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : g_sets_rdata
-      assign tag_rdata[i] = tag_rdata_flat[i*(CFG.TAG_WIDTH+2+TagParity) +:
-                                              CFG.TAG_WIDTH+2+TagParity];
+      assign tag_rdata[i] = tag_rdata_flat[i*TagEntryWidth +: TagEntryWidth];
     end
     tc_sram_impl #(
-      .DataWidth ( (CFG.TAG_WIDTH+2+TagParity) * CFG.SET_COUNT ),
-      .ByteWidth ( CFG.TAG_WIDTH+2+TagParity                   ),
+      .DataWidth ( TagEntryWidth * CFG.SET_COUNT               ),
+      .ByteWidth ( TagEntryWidth                                ),
       .NumWords  ( CFG.LINE_COUNT                              ),
       .NumPorts  ( 1                                           ),
+      .SimInit   (  "zeros"                                    ),
       .impl_in_t ( sram_cfg_tag_t                              )
     ) i_tag (
       .clk_i   ( clk_i                      ),
@@ -236,43 +246,70 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     );
   end
 
-  // compute tag parity bit the cycle before reading the tag and buffer it
-  logic exp_tag_parity_bit_d, exp_tag_parity_bit_q;
-
-  if (TagParity>0) begin : gen_tag_parity_bit
-    assign exp_tag_parity_bit_d = ^(tag_req_d.addr >> (CFG.LINE_ALIGN + CFG.COUNT_ALIGN));
-    `FFL(exp_tag_parity_bit_q, exp_tag_parity_bit_d, req_valid && req_ready, '0, clk_i, rst_ni);
-  end else begin : gen_no_tag_parity_bit
-    assign exp_tag_parity_bit_d = '0;
-    assign exp_tag_parity_bit_q = '0;
+  // Vote the valid/error bits: each is stored as 3 replicas (the original bit plus 2 appended
+  // columns, written identically on every tag write) so a single bit flip in any one copy is
+  // masked instead of silently corrupting a hit/miss decision or the reported error bit.
+  logic [CFG.SET_COUNT-1:0] valid_voted, error_voted, tag_meta_tmr_mismatch;
+  for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : gen_tag_meta_tmr
+    logic valid_fault, error_fault;
+    TMR_voter_fail #(.VoterType(1)) i_valid_voter (
+      .a_i              ( tag_rdata[i][CFG.TAG_WIDTH+1]              ),
+      .b_i              ( tag_rdata[i][CFG.TAG_WIDTH+2+TagParity]    ),
+      .c_i              ( tag_rdata[i][CFG.TAG_WIDTH+3+TagParity]    ),
+      .majority_o       ( valid_voted[i]                             ),
+      .fault_detected_o ( valid_fault                                )
+    );
+    TMR_voter_fail #(.VoterType(1)) i_error_voter (
+      .a_i              ( tag_rdata[i][CFG.TAG_WIDTH]                ),
+      .b_i              ( tag_rdata[i][CFG.TAG_WIDTH+4+TagParity]    ),
+      .c_i              ( tag_rdata[i][CFG.TAG_WIDTH+5+TagParity]    ),
+      .majority_o       ( error_voted[i]                             ),
+      .fault_detected_o ( error_fault                                )
+    );
+    assign tag_meta_tmr_mismatch[i] = valid_fault | error_fault;
   end
 
   // Determine which set hit
   logic [CFG.SET_COUNT-1:0] errors;
   assign required_tag = tag_req_q.addr[CFG.FETCH_AW-1:CFG.LINE_ALIGN + CFG.COUNT_ALIGN];
   for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : gen_line_hit
-    assign line_hit[i] = tag_rdata[i][CFG.TAG_WIDTH+1] &&
+    assign line_hit[i] = valid_voted[i] &&
                          tag_rdata[i][CFG.TAG_WIDTH-1:0] == required_tag; // check valid bit and tag
-    assign errors[i] = tag_rdata[i][CFG.TAG_WIDTH] && line_hit[i]; // check error bit
+    assign errors[i] = error_voted[i] && line_hit[i]; // check error bit
   end
   assign tag_rsp_s.error = |errors;
 
   if (TagParity>0) begin : gen_tag_parity_error
     for (genvar i = 0; i < CFG.SET_COUNT; i++) begin : gen_tag_parity_error_individual
-      assign tag_parity_error_d[i] = ~((tag_rdata[i][CFG.TAG_WIDTH+2] == exp_tag_parity_bit_q));
+      // Self-consistency check: recompute parity from the tag bits this way actually
+      // has stored and compare against its own stored parity bit. This does not depend
+      // on line_hit, so a corrupted entry is caught the moment it's read out (hit or
+      // miss for the current request), instead of only when its corrupted tag happens
+      // to alias with whatever address is being looked up right now. Without this, a
+      // corrupted entry that never aliases sits undetected until a much later natural
+      // refill happens to overwrite it, widening the window for a second fault to land
+      // on the same word and defeat single-bit parity, and undercounting the L1 error
+      // registers that are supposed to reflect every correction.
+      assign tag_parity_error_d[i] = tag_rdata[i][CFG.TAG_WIDTH+1] &&
+                                     (tag_rdata[i][CFG.TAG_WIDTH+2] != ^tag_rdata[i][CFG.TAG_WIDTH-1:0]);
     end
     assign tag_rsp_s.hit = |(line_hit & ~tag_parity_error_d);
-    assign faulty_hit_d = |(line_hit & tag_parity_error_d);
+    // Any way read this cycle that's self-inconsistent triggers recovery, regardless of
+    // whether it happened to hit for the currently-requested address.
+    assign faulty_hit_d = |tag_parity_error_d;
   end else begin : gen_no_tag_parity_error
     assign tag_rsp_s.hit = |line_hit;
     assign tag_parity_error_d = '0;
     assign faulty_hit_d = '0;
   end
 
+  // Exclude parity-faulty ways from way selection, same as tag_rsp_s.hit above: a
+  // corrupted-but-aliasing way must never be the one lzc picks to read data from,
+  // even if some other (genuinely hitting) way keeps the overall hit asserted.
   lzc #(.WIDTH(CFG.SET_COUNT)) i_lzc (
-    .in_i     ( line_hit       ),
-    .cnt_o    ( tag_rsp_s.cset ),
-    .empty_o  (                )
+    .in_i     ( line_hit & ~tag_parity_error_d ),
+    .cnt_o    ( tag_rsp_s.cset                 ),
+    .empty_o  (                                )
   );
 
   // Buffer the metadata on a valid handshake. Stall on write (implicit in req_valid/ready)
@@ -379,6 +416,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     .DataWidth ( CFG.LINE_WIDTH + CFG.L1_DATA_PARITY_BITS ),
     .NumWords  ( CFG.LINE_COUNT * CFG.SET_COUNT           ),
     .NumPorts  ( 1                                        ),
+    .SimInit   (   "zeros"                                ),
     .impl_in_t ( sram_cfg_data_t                          )
   ) i_data (
     .clk_i   ( clk_i           ),
@@ -468,6 +506,7 @@ module snitch_icache_lookup_serial import snitch_icache_pkg::*; #(
     icache_events_o.l1_handler_stall = out_valid_o & ~out_ready_i;
     icache_events_o.l1_tag_parity_error = req_handshake & faulty_hit_d;
     icache_events_o.l1_data_parity_error = tag_handshake & data_parity_inv_d.parity_error;
+    icache_events_o.l1_tag_meta_tmr_error = req_handshake & (|tag_meta_tmr_mismatch);
   end
 
 endmodule

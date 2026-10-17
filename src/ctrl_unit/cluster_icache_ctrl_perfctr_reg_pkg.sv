@@ -157,4 +157,3 @@ package cluster_icache_ctrl_perfctr_reg_pkg;
   };
 
 endpackage
-

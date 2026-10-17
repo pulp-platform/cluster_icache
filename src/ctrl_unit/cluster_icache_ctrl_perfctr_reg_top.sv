@@ -608,12 +608,12 @@ module cluster_icache_ctrl_perfctr_reg_top_intf
 
   reg_bus_req_t s_reg_req;
   reg_bus_rsp_t s_reg_rsp;
-  
+
   // Assign SV interface to structs
   `REG_BUS_ASSIGN_TO_REQ(s_reg_req, regbus_slave)
   `REG_BUS_ASSIGN_FROM_RSP(regbus_slave, s_reg_rsp)
 
-  
+
 
   cluster_icache_ctrl_perfctr_reg_top #(
     .reg_req_t(reg_bus_req_t),
@@ -628,7 +628,5 @@ module cluster_icache_ctrl_perfctr_reg_top_intf
     .hw2reg, // Read
     .devmode_i
   );
-  
+
 endmodule
-
-

@@ -83,7 +83,11 @@ module snitch_icache import snitch_icache_pkg::*; #(
   input  sram_cfg_tag_t   sram_cfg_tag_i,
 
   output axi_req_t axi_req_o,
-  input  axi_rsp_t axi_rsp_i
+  input  axi_rsp_t axi_rsp_i,
+
+  /// Set when rsp_fifo's or i_refill's internal rel_fifo TMR-corrects a
+  /// pointer fault. One-cycle pulse.
+  output logic     fifo_tmr_fault_o
 );
 
   // Bundle the parameters up into a proper configuration struct that we can
@@ -707,7 +711,8 @@ module snitch_icache import snitch_icache_pkg::*; #(
     .in_rsp_valid_o  ( refill_rsp_valid   ),
     .in_rsp_ready_i  ( refill_rsp_ready   ),
     .axi_req_o (axi_req_o),
-    .axi_rsp_i (axi_rsp_i)
+    .axi_rsp_i (axi_rsp_i),
+    .fifo_tmr_fault_o (fifo_tmr_fault_o)
   );
 
 endmodule
@@ -778,9 +783,9 @@ module l0_to_bypass #(
   logic [CFG.NR_FETCH_PORTS-1:0] rsp_valid;
   logic [CFG.NR_FETCH_PORTS-1:0] rsp_ready;
 
-  fifo_v3 #(
-    .DATA_WIDTH ( CFG.NR_FETCH_PORTS ),
-    .DEPTH      ( 4              )
+  rel_fifo #(
+    .DataWidth ( CFG.NR_FETCH_PORTS ),
+    .Depth     ( 4              )
   ) rsp_fifo (
     .clk_i,
     .rst_ni,
@@ -792,7 +797,8 @@ module l0_to_bypass #(
     .data_i     ( {in_valid & in_ready} ),
     .push_i     ( |{in_valid & in_ready}),
     .data_o     ( rsp_fifo_mux          ),
-    .pop_i      ( |rsp_fifo_pop         )
+    .pop_i      ( |rsp_fifo_pop         ),
+    .fault_o    (                       )
   );
 
 

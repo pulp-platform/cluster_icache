@@ -193,11 +193,21 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
         end else begin
           if (evict_strb[i]) begin
             tag[i].vld <= 1'b0;
+            // Store the tag bits now, but the WRONG parity bit (same principle as
+            // flush_strb below): this line is invalid until validate_strb,
+            // so delibrately fail its own self-consistency check the whole time it's
+            // pending a refill, not just after an explicit flush. Otherwise a
+            // single-bit fault flipping vld back to 1 during the refill window
+            // would go undetected (self-consistent parity) and serve stale
+            // pre-eviction data as if it were a genuine hit.
             tag[i].tag <= evict_because_prefetch ?
-                          {~^addr_tag_prefetch, addr_tag_prefetch} :
-                          {~^addr_tag, addr_tag};
+                          {^addr_tag_prefetch, addr_tag_prefetch} :
+                          {^addr_tag, addr_tag};
           end else if (validate_strb[i]) begin
             tag[i].vld <= 1'b1;
+            // The refill actually landed: fix the parity bit to the correct
+            // value (the address bits were already written by evict_strb above).
+            tag[i].tag[CFG.L0_TAG_WIDTH] <= ~^tag[i].tag[CFG.L0_TAG_WIDTH-1:0];
           end
           if (flush_strb[i]) begin
             tag[i].vld <= 1'b0;
@@ -570,7 +580,7 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     icache_events_o.l0_prefetch = prefetcher_out.vld;
     icache_events_o.l0_double_hit = hit_any & ~hit_early_is_onehot & in_valid_i;
     icache_events_o.l0_stall = !in_ready_o & in_valid_i;
-    icache_events_o.l0_tag_parity_error = |tag_parity_error_vect & |invalid_tag_parity_error_vect;
+    icache_events_o.l0_tag_parity_error = |tag_parity_error_vect | |invalid_tag_parity_error_vect;
     icache_events_o.l0_data_parity_error = |data_parity_error_vect;
   end
 

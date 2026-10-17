@@ -27,7 +27,10 @@ module snitch_icache_refill #(
   input  logic                        in_rsp_ready_i,
 
   output axi_req_t                    axi_req_o,
-  input  axi_rsp_t                    axi_rsp_i
+  input  axi_rsp_t                    axi_rsp_i,
+
+  /// Set when i_fifo_id_queue's internal rel_fifo TMR-corrects a pointer fault.
+  output logic                        fifo_tmr_fault_o
 );
 
 `ifndef SYNTHESIS
@@ -38,32 +41,50 @@ module snitch_icache_refill #(
   localparam int unsigned BeatsPerRefill =
     CFG.LINE_WIDTH >= CFG.FILL_DW ? CFG.LINE_WIDTH/CFG.FILL_DW : 1;
 
-  // The response queue holds metadata for the issued requests in order.
+  // Sub-line offset width: nonzero only when one AXI fill beat spans multiple
+  // cache lines (CFG.LINE_WIDTH < CFG.FILL_DW), in which case we need to
+  // remember which slice of the beat belongs to each pending request.
+  localparam int unsigned AddrQueueDepth =
+    (CFG.LINE_WIDTH < CFG.FILL_DW) ? CFG.FILL_ALIGN-CFG.LINE_ALIGN : 0;
+
+  // The response queue holds metadata (id/bypass, and -- when applicable --
+  // the sub-line offset) for the issued requests in order. This used to be
+  // two separate fifo_v3 instances sharing the same push_i/pop_i but each
+  // keeping its own independent read/write pointers; a single-bit fault in
+  // either one's pointer silently desyncs it from the other, e.g. making the
+  // addr-offset queue return the wrong slice for a given request's id/bypass
+  // -- feeding the wrong half of the AXI beat into the cache line as if it
+  // were correct, with nothing downstream able to detect it. Folding both
+  // fields into one queue removes the redundant pointer state entirely,
+  // rather than trying to keep two copies of it consistent.
   logic queue_full;
   logic queue_push;
   logic queue_pop;
 
   localparam int unsigned TransactionQueueDepth = 4;
 
-  fifo_v3  #(
-    .DEPTH      ( TransactionQueueDepth ),
-    .DATA_WIDTH ( CFG.PENDING_IW+1 )
+  logic [CFG.PENDING_IW+AddrQueueDepth:0] queue_data_i, queue_data_o;
+
+  rel_fifo #(
+    .Depth     ( TransactionQueueDepth ),
+    .DataWidth ( CFG.PENDING_IW+AddrQueueDepth+1 )
   ) i_fifo_id_queue (
-    .clk_i       ( clk_i                          ),
-    .rst_ni      ( rst_ni                         ),
-    .flush_i     ( 1'b0                           ),
-    .testmode_i  ( 1'b0                           ),
-    .full_o      ( queue_full                     ),
-    .empty_o     (                                ),
-    .usage_o     (                                ),
-    .data_i      ( {in_req_bypass_i, in_req_id_i} ),
-    .push_i      ( queue_push                     ),
-    .data_o      ( {in_rsp_bypass_o, in_rsp_id_o} ),
-    .pop_i       ( queue_pop                      )
+    .clk_i       ( clk_i        ),
+    .rst_ni      ( rst_ni       ),
+    .flush_i     ( 1'b0         ),
+    .testmode_i  ( 1'b0         ),
+    .full_o      ( queue_full   ),
+    .empty_o     (              ),
+    .usage_o     (              ),
+    .data_i      ( queue_data_i ),
+    .push_i      ( queue_push   ),
+    .data_o      ( queue_data_o ),
+    .pop_i       ( queue_pop    ),
+    .fault_o     (fifo_tmr_fault_o)
   );
 
-  // Accept incoming requests, push the ID into the queue, and issue the
-  // corresponding request.
+  // Accept incoming requests, push the ID (and sub-line offset, if any)
+  // into the queue, and issue the corresponding request.
   assign in_req_ready_o  = axi_rsp_i.ar_ready & ~queue_full;
   assign queue_push      = axi_req_o.ar_valid & axi_rsp_i.ar_ready;
 
@@ -71,6 +92,9 @@ module snitch_icache_refill #(
   logic [CFG.LINE_WIDTH-1:0] response_data;
 
   if (CFG.LINE_WIDTH > CFG.FILL_DW) begin : g_data_concat
+    assign queue_data_i = {in_req_bypass_i, in_req_id_i};
+    assign {in_rsp_bypass_o, in_rsp_id_o} = queue_data_o;
+
     always_ff @(posedge clk_i, negedge rst_ni) begin
       if (!rst_ni) begin
         response_data[CFG.LINE_WIDTH-CFG.FILL_DW-1:0] <= '0;
@@ -81,27 +105,14 @@ module snitch_icache_refill #(
     end
     assign response_data[CFG.LINE_WIDTH-1:CFG.LINE_WIDTH-CFG.FILL_DW] = axi_rsp_i.r.data;
   end else if (CFG.LINE_WIDTH < CFG.FILL_DW) begin : g_data_slice
-    localparam int unsigned AddrQueueDepth = CFG.FILL_ALIGN-CFG.LINE_ALIGN;
     logic [AddrQueueDepth-1:0] addr_offset;
-    fifo_v3  #(
-      .DEPTH      ( TransactionQueueDepth ),
-      .DATA_WIDTH ( AddrQueueDepth )
-    ) i_fifo_addr_offset (
-      .clk_i       ( clk_i  ),
-      .rst_ni      ( rst_ni ),
-      .flush_i     ( 1'b0 ),
-      .testmode_i  ( 1'b0 ),
-      .full_o      ( /* same size as the `i_fifo_id_queue` */       ),
-      .empty_o     ( ),
-      .usage_o     ( ),
-      .data_i      ( in_req_addr_i[CFG.FILL_ALIGN-1:CFG.LINE_ALIGN] ),
-      .push_i      ( queue_push ),
-      .data_o      ( addr_offset ),
-      .pop_i       ( queue_pop )
-    );
+    assign queue_data_i = {in_req_bypass_i, in_req_addr_i[CFG.FILL_ALIGN-1:CFG.LINE_ALIGN], in_req_id_i};
+    assign {in_rsp_bypass_o, addr_offset, in_rsp_id_o} = queue_data_o;
     assign response_data =
       axi_rsp_i.r.data >> (addr_offset * CFG.LINE_WIDTH);
   end else begin : g_data_passthrough
+    assign queue_data_i = {in_req_bypass_i, in_req_id_i};
+    assign {in_rsp_bypass_o, in_rsp_id_o} = queue_data_o;
     assign response_data = axi_rsp_i.r.data;
   end
 
