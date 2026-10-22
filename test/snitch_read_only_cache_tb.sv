@@ -5,21 +5,6 @@
 // Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
 //         Samuel Riedel <sriedel@iis.ee.ethz.ch>
 
-class icache_request #(
-  parameter int unsigned AddrWidth = 48
-);
-  rand logic [AddrWidth-1:0] addr;
-  rand bit flush;
-
-  constraint flush_c {
-    flush dist { 1 := 2, 0 := 200};
-  }
-
-  constraint addr_c {
-    addr[1:0] == 0;
-  }
-endclass
-
 // Inherit from the random AXI master, but modify the request to emulate a core requesting intstructions.
 class semirand_axi_master #(
   // AXI interface parameters
