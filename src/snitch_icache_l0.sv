@@ -304,7 +304,6 @@ module snitch_icache_l0 import snitch_icache_pkg::*; #(
     end
   end else begin : gen_data_parity_norel
     assign data_parity_error_vect = '0;
-    assign data_parity_error = '0;
   end
 
   assign in_ready_o = hit_any & ~|(hit_early & (tag_parity_error_vect | data_parity_error_vect));
