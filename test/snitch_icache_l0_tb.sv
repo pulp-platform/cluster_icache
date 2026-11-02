@@ -126,13 +126,13 @@ module snitch_icache_l0_tb #(
     logic [IdWidth-1:0] id;
   } dut_out_t;
 
-  typedef stream_test::stream_driver#(
+  typedef cc_test_pkg::cc_stream_driver#(
     .payload_t(dut_in_t),
     .TA       (TA),
     .TT       (TT)
   ) stream_driver_in_t;
 
-  typedef stream_test::stream_driver#(
+  typedef cc_test_pkg::cc_stream_driver#(
     .payload_t(dut_out_t),
     .TA       (TA),
     .TT       (TT)

@@ -280,8 +280,8 @@ module snitch_icache
       .out_rsp_ready_o(local_prefetch_rsp_ready)
     );
 
-    isochronous_spill_register #(
-      .T     (prefetch_req_t),
+    cc_isochronous_spill_register #(
+      .data_t(prefetch_req_t),
       .Bypass(!ISO_CROSSING)
     ) i_spill_register_prefetch_req (
       .src_clk_i  (clk_d2_i),
@@ -296,8 +296,8 @@ module snitch_icache
       .dst_data_o (prefetch_req[i])
     );
 
-    isochronous_spill_register #(
-      .T     (prefetch_resp_t),
+    cc_isochronous_spill_register #(
+      .data_t(prefetch_resp_t),
       .Bypass(!ISO_CROSSING)
     ) i_spill_register_prefetch_resp (
       .src_clk_i  (clk_i),
@@ -339,8 +339,8 @@ module snitch_icache
 
   assign bypass_req.id = '0;
 
-  isochronous_spill_register #(
-    .T     (miss_refill_req_t),
+  cc_isochronous_spill_register #(
+    .data_t(miss_refill_req_t),
     .Bypass(!ISO_CROSSING)
   ) i_spill_register_bypass_req (
     .src_clk_i  (clk_d2_i),
@@ -355,8 +355,8 @@ module snitch_icache
     .dst_data_o (bypass_req_q)
   );
 
-  isochronous_spill_register #(
-    .T     (miss_refill_rsp_t),
+  cc_isochronous_spill_register #(
+    .data_t(miss_refill_rsp_t),
     .Bypass(!ISO_CROSSING)
   ) i_spill_register_bypass_resp (
     .src_clk_i  (clk_i),
@@ -421,7 +421,7 @@ module snitch_icache
     ) i_stream_arbiter_pre (
       .clk_i,
       .rst_ni,
-      .flush_i    ('0),
+      .clr_i      ('0),
       .inp_data_i (prefetch_req),
       .inp_valid_i(prefetch_req_valid & ~prefetch_req_priority),
       .inp_ready_o(prefetch_req_ready_pre),
@@ -437,7 +437,7 @@ module snitch_icache
     ) i_stream_arbiter_fetch (
       .clk_i,
       .rst_ni,
-      .flush_i    ('0),
+      .clr_i      ('0),
       .inp_data_i (prefetch_req),
       .inp_valid_i(prefetch_req_valid & prefetch_req_priority),
       .inp_ready_o(prefetch_req_ready_fetch),
@@ -456,7 +456,7 @@ module snitch_icache
     ) i_stream_arbiter (
       .clk_i,
       .rst_ni,
-      .flush_i    ('0),
+      .clr_i      ('0),
       .inp_data_i (prefetch_req),
       .inp_valid_i(prefetch_req_valid),
       .inp_ready_o(prefetch_req_ready_tmp),
@@ -673,12 +673,13 @@ module snitch_icache
   );
   assign handler_req.bypass = 1'b0;
   // Arbitrate between bypass and cache-refills
-  stream_arbiter #(
-    .DATA_T(miss_refill_req_t),
-    .N_INP (2)
+  cc_stream_arbiter #(
+    .data_t(miss_refill_req_t),
+    .NumInp(2)
   ) i_stream_arbiter_miss_refill (
     .clk_i,
     .rst_ni,
+    .clr_i      (1'b0),
     .inp_data_i ({bypass_req_q, handler_req}),
     .inp_valid_i({bypass_req_valid_q, handler_req_valid}),
     .inp_ready_o({bypass_req_ready_q, handler_req_ready}),
@@ -687,8 +688,8 @@ module snitch_icache
     .oup_ready_i(refill_req_ready)
   );
   // Response path muxing
-  stream_demux #(
-    .N_OUP(2)
+  cc_stream_demux #(
+    .NumOup(2)
   ) i_stream_demux_miss_refill (
     .inp_valid_i(refill_rsp_valid),
     .inp_ready_o(refill_rsp_ready),
@@ -774,12 +775,13 @@ module l0_to_bypass #(
       in_addr_i[i][CFG.FETCH_AW-1:CFG.LINE_ALIGN], {CFG.LINE_ALIGN{1'b0}}
     };
   end
-  stream_arbiter #(
-    .DATA_T(logic [CFG.FETCH_AW-1:0]),
-    .N_INP (CFG.NR_FETCH_PORTS)
+  cc_stream_arbiter #(
+    .data_t(logic [CFG.FETCH_AW-1:0]),
+    .NumInp(CFG.NR_FETCH_PORTS)
   ) i_stream_arbiter (
     .clk_i,
     .rst_ni,
+    .clr_i      (1'b0),
     .inp_data_i (in_addr_masked),
     .inp_valid_i(in_valid),
     .inp_ready_o(in_ready),
@@ -800,14 +802,14 @@ module l0_to_bypass #(
   logic [CFG.NR_FETCH_PORTS-1:0] rsp_valid;
   logic [CFG.NR_FETCH_PORTS-1:0] rsp_ready;
 
-  fifo_v3 #(
-    .DATA_WIDTH(CFG.NR_FETCH_PORTS),
-    .DEPTH     (4)
+  cc_fifo #(
+    .DataWidth(CFG.NR_FETCH_PORTS),
+    .Depth     (4)
   ) rsp_fifo (
     .clk_i,
     .rst_ni,
+    .clr_i     (1'b0),
     .flush_i   (1'b0),
-    .testmode_i(1'b0),
     .full_o    (rsp_fifo_full),
     .empty_o   (),
     .usage_o   (),
@@ -818,17 +820,17 @@ module l0_to_bypass #(
   );
 
 
-  onehot_to_bin #(
-    .ONEHOT_WIDTH(CFG.NR_FETCH_PORTS)
+  cc_onehot_to_bin #(
+    .OnehotWidth(CFG.NR_FETCH_PORTS)
   ) i_onehot_to_bin (
-    .onehot(rsp_fifo_mux),
-    .bin   (onehot_mux)
+    .onehot_i(rsp_fifo_mux),
+    .bin_o   (onehot_mux)
   );
 
   assign rsp_ready = '1;
 
-  stream_demux #(
-    .N_OUP(CFG.NR_FETCH_PORTS)
+  cc_stream_demux #(
+    .NumOup(CFG.NR_FETCH_PORTS)
   ) i_stream_mux_miss_refill (
     .inp_valid_i(refill_rsp_valid_i),
     .inp_ready_o(refill_rsp_ready_o),

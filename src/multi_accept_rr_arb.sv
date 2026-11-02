@@ -10,7 +10,7 @@ module multi_accept_rr_arb #(
 ) (
   input logic clk_i,
   input logic rst_ni,
-  input logic flush_i,
+  input logic clr_i,
 
   input  data_t [NumInp-1:0] inp_data_i,
   input  logic  [NumInp-1:0] inp_valid_i,
@@ -32,7 +32,7 @@ module multi_accept_rr_arb #(
     if (!rst_ni) begin
       lock_q <= '0;
     end else begin
-      if (flush_i) begin
+      if (clr_i) begin
         lock_q <= '0;
       end else begin
         lock_q <= lock_d;
@@ -44,7 +44,7 @@ module multi_accept_rr_arb #(
     if (!rst_ni) begin
       req_q <= '0;
     end else begin
-      if (flush_i) begin
+      if (clr_i) begin
         req_q <= '0;
       end else begin
         req_q <= req_d;
@@ -59,8 +59,8 @@ module multi_accept_rr_arb #(
 `ifndef COMMON_CELLS_ASSERTS_OFF
   lock :
   assert property(
-      @(posedge clk_i) disable iff (!rst_ni || flush_i)
-          oup_valid_o && (!oup_ready_i && !flush_i) |=> idx == $past(
+      @(posedge clk_i) disable iff (!rst_ni || clr_i)
+          oup_valid_o && (!oup_ready_i && !clr_i) |=> idx == $past(
       idx
   ))
   else $fatal(1, "Lock implies same arbiter decision in next cycle if output is not ready.");
@@ -70,7 +70,7 @@ module multi_accept_rr_arb #(
   // over `posedge clk_i`.
   lock_req :
   assume property(
-      @(posedge clk_i) disable iff (!rst_ni || flush_i)
+      @(posedge clk_i) disable iff (!rst_ni || clr_i)
           lock_q |-> inp_valid_i[idx] == req_q[idx])
   else $fatal(1, "It is disallowed to deassert the selected unserved request signals.");
 `endif
@@ -79,16 +79,16 @@ module multi_accept_rr_arb #(
 
 
 
-  rr_arb_tree #(
+  cc_rr_arb_tree #(
     .NumIn    (NumInp),
-    .DataType (data_t),
+    .data_t   (data_t),
     .ExtPrio  (1'b0),
     .AxiVldRdy(1'b1),
     .LockIn   (1'b0)
   ) i_arbiter (
     .clk_i,
     .rst_ni,
-    .flush_i,
+    .clr_i,
     .rr_i  ('0),
     .req_i (req_d),
     .gnt_o (inp_ready_o),

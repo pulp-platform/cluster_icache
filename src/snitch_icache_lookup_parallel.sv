@@ -85,7 +85,7 @@ module snitch_icache_lookup_parallel
     ram_enable    = '0;
     ram_write     = 1'b0;
 
-    if (init_count_q != $unsigned(CFG.LINE_COUNT)) begin
+    if (init_count_q != CFG.LINE_COUNT) begin
       ram_addr   = init_count_q;
       ram_enable = '1;
       ram_write  = 1'b1;
@@ -107,7 +107,7 @@ module snitch_icache_lookup_parallel
 
   always_ff @(posedge clk_i, negedge rst_ni) begin
     if (!rst_ni) init_count_q <= '0;
-    else if (init_count_q != $unsigned(CFG.LINE_COUNT)) init_count_q <= init_count_q + 1;
+    else if (init_count_q != CFG.LINE_COUNT) init_count_q <= init_count_q + 1;
     else if (flush_valid_i) init_count_q <= '0;
   end
 
@@ -254,8 +254,9 @@ module snitch_icache_lookup_parallel
     end
   end
 
-  lzc #(
-    .WIDTH(CFG.WAY_COUNT)
+  cc_lzc #(
+    .Width(CFG.WAY_COUNT),
+    .Mode (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_lzc (
     .in_i   (line_hit),
     .cnt_o  (data_d.cway),
@@ -264,13 +265,12 @@ module snitch_icache_lookup_parallel
 
   // Buffer response in case we are stalled
   if (CFG.BUFFER_LOOKUP) begin : gen_buffer
-    fall_through_register #(
-      .T(out_buffer_t)
+    cc_fall_through_register #(
+      .data_t(out_buffer_t)
     ) i_rsp_buffer (
       .clk_i     (clk_i),
       .rst_ni    (rst_ni),
       .clr_i     (1'b0),
-      .testmode_i(1'b0),
       // Input port
       .valid_i   (valid_q),
       .ready_o   (buffer_ready),

@@ -132,8 +132,9 @@ module snitch_icache_handler
     free = |free_entries;
   end
 
-  lzc #(
-    .WIDTH(CFG.PENDING_COUNT)
+  cc_lzc #(
+    .Width(CFG.PENDING_COUNT),
+    .Mode (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_lzc_free (
     .in_i   (free_entries),
     .cnt_o  (free_id),
@@ -152,8 +153,9 @@ module snitch_icache_handler
     pending = |pending_matches;
   end
 
-  lzc #(
-    .WIDTH(CFG.PENDING_COUNT)
+  cc_lzc #(
+    .Width(CFG.PENDING_COUNT),
+    .Mode (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_lzc_pending (
     .in_i   (pending_matches),
     .cnt_o  (pending_id),

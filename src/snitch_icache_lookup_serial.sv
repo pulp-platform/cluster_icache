@@ -203,8 +203,9 @@ module snitch_icache_lookup_serial
   assign tag_rsp_s.hit   = |line_hit;
   assign tag_rsp_s.error = |errors;
 
-  lzc #(
-    .WIDTH(CFG.WAY_COUNT)
+  cc_lzc #(
+    .Width(CFG.WAY_COUNT),
+    .Mode (cc_pkg::LZC_TRAILING_ZERO_CNT)
   ) i_lzc (
     .in_i   (line_hit),
     .cnt_o  (tag_rsp_s.cway),
