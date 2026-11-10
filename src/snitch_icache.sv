@@ -199,10 +199,6 @@ wire icache_l0_events_t [ (NR_FETCH_PORTS-1) :0] icache_l0_events_oB;
 wire icache_l0_events_t [ (NR_FETCH_PORTS-1) :0] icache_l0_events_oA;
 wor flush_readyTmrError;
 wire flush_ready;
-wor fifo_tmr_fault_oTmrError;
-wire fifo_tmr_fault_oC;
-wire fifo_tmr_fault_oB;
-wire fifo_tmr_fault_oA;
 wor axi_req_oTmrError;
 wire axi_req_t axi_req_oC;
 wire axi_req_t axi_req_oB;
@@ -1435,14 +1431,6 @@ majorityVoter #(.WIDTH( ($bits(axi_req_t)) )) axi_req_oVoter (
     .tmrErr(axi_req_oTmrError)
   );
 
-majorityVoter fifo_tmr_fault_oVoter (
-    .inA(fifo_tmr_fault_oA),
-    .inB(fifo_tmr_fault_oB),
-    .inC(fifo_tmr_fault_oC),
-    .out(fifo_tmr_fault_o),
-    .tmrErr(fifo_tmr_fault_oTmrError)
-  );
-
 majorityVoter flush_readyVoter (
     .inA(flush_readyA),
     .inB(flush_readyB),
@@ -1459,7 +1447,7 @@ majorityVoter #(.WIDTH( (($bits(icache_l0_events_t))*NR_FETCH_PORTS) )) icache_l
     .tmrErr(icache_l0_events_oTmrError)
   );
 
-majorityVoter #(.WIDTH( ($bits(icache_l1_events_t)*NR_FETCH_PORTS) )) icache_l1_events_oVoter (
+majorityVoter #(.WIDTH( ($bits(icache_l1_events_t)) )) icache_l1_events_oVoter (
     .inA(icache_l1_events_oA),
     .inB(icache_l1_events_oB),
     .inC(icache_l1_events_oC),
@@ -1630,7 +1618,7 @@ assign icache_l1_tag_meta_tmr_fault = icache_l1_events_o.l1_tag_meta_tmr_error;
 assign icache_l1_tag_parity_fault = icache_l1_events_o.l1_tag_parity_error;
 assign icache_l1_data_parity_fault = icache_l1_events_o.l1_data_parity_error;
 
-assign icache_correctable_error_o = axi_req_oTmrError | fifo_tmr_fault_oTmrError | flush_readyTmrError | icache_l0_events_oTmrError | icache_l1_events_oTmrError | in_bypass_dataTmrError | in_bypass_errorTmrError | in_bypass_readyTmrError | in_cache_dataTmrError | in_cache_errorTmrError | in_cache_readyTmrError | lock_pre_dTmrErrorA | lock_pre_dTmrErrorB | lock_pre_dTmrErrorC
+assign icache_correctable_error_o = axi_req_oTmrError | flush_readyTmrError | icache_l0_events_oTmrError | icache_l1_events_oTmrError | in_bypass_dataTmrError | in_bypass_errorTmrError | in_bypass_readyTmrError | in_cache_dataTmrError | in_cache_errorTmrError | in_cache_readyTmrError | lock_pre_dTmrErrorA | lock_pre_dTmrErrorB | lock_pre_dTmrErrorC
                                       | icache_refill_correctable_error | icache_handler_correctable_error | icache_serial_lookup_correctable_error | stream_arbiter_correctable_error
                                       | l0_to_bypass_correctable_error | |l0_icache_correctable_error
                                       | |icache_l0_tag_parity_fault | |icache_l0_data_parity_fault | icache_l1_tag_meta_tmr_fault | icache_l1_tag_parity_fault | icache_l1_data_parity_fault;
